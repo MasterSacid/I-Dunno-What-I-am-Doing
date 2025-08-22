@@ -99,9 +99,9 @@ vec2_t project(vec3_t point) {
 }
 
 void update(void) {
-    cubeRotation.x+= 0.01;
-    cubeRotation.y+= 0.01;
-    cubeRotation.z+= 0.01;
+    cubeRotation.x+= 0.001;
+    cubeRotation.y+= 0.001;
+    cubeRotation.z+= 0.001;
 
     //Original Cube Points
     for (int i = 0 ; i < N_POINTS ; i++) {
