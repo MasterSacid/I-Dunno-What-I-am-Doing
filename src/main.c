@@ -24,6 +24,7 @@ vec3_t cubePoints[N_POINTS];
 vec2_t projectedPoints [N_POINTS];
 
 vec3_t cameraPosition = {.x=0,.y=0,.z=-5};
+vec3_t cubeRotation = {.x = 0, .y = 0, .z = 0};
 
 float fovFactor = 640;
 
@@ -98,15 +99,24 @@ vec2_t project(vec3_t point) {
 }
 
 void update(void) {
+    cubeRotation.x+= 0.01;
+    cubeRotation.y+= 0.01;
+    cubeRotation.z+= 0.01;
+
     //Original Cube Points
     for (int i = 0 ; i < N_POINTS ; i++) {
         vec3_t point = cubePoints[i];
 
-        //Move the points away from the camera
-        point.z -= cameraPosition.z;
+        vec3_t transformedPoint = rotateAroundX(point,cubeRotation.x);
+        transformedPoint = rotateAroundY(transformedPoint,cubeRotation.y);
+        transformedPoint = rotateAroundZ(transformedPoint,cubeRotation.z);
 
+
+
+        //Move the points away from the camera
+        transformedPoint.z -= cameraPosition.z;
         //Project the current point (its single point)
-        vec2_t projectedPoint = project(point);
+        vec2_t projectedPoint = project(transformedPoint);
         //Then save them in the array of projected points
         projectedPoints[i] = projectedPoint;
     }
