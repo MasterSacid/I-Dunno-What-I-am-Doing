@@ -14,7 +14,12 @@ add_executable(renderingInC src/main.c
         src/display.h
         src/display.c
         src/vector.c
-        src/vector.h)
+        src/vector.h
+        src/mesh.c
+        src/mesh.h
+        src/triangle.c
+        src/triangle.h
+)
 
 
 target_include_directories(renderingInC PRIVATE ${SDL2_INCLUDE_DIRS})

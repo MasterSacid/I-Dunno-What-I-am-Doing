@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 #include "display.h"
 #include "vector.h"
+#include "mesh.h"
 
 
 void setup(void);
@@ -18,10 +19,6 @@ vec2_t project(vec3_t point);
 
 
 bool isRunning = false;
-//ARRAY OF VECTORS
-const int N_POINTS = 9*9*9;
-vec3_t cubePoints[N_POINTS];
-vec2_t projectedPoints [N_POINTS];
 
 vec3_t cameraPosition = {.x=0,.y=0,.z=-5};
 vec3_t cubeRotation = {.x = 0, .y = 0, .z = 0};
@@ -29,6 +26,7 @@ vec3_t cubeRotation = {.x = 0, .y = 0, .z = 0};
 float fovFactor = 640;
 
 uint32_t previousFrameTime = 0;
+triangle_t trianglesToRender[N_MESH_FACES];
 
 
 int main(void) {
@@ -64,17 +62,6 @@ void setup(void) {
         windowHeight
         );
 
-    int pointCount = 0;
-
-    //Load the array of vectors here
-    for (float x = -1; x<= 1; x += 0.25) {
-        for (float y = -1; y<= 1; y += 0.25) {
-            for (float z = -1;z<= 1; z += 0.25) {
-                vec3_t newPoint = {.x=x,.y=y,.z=z};
-                cubePoints[pointCount++] = newPoint;
-            }
-        }
-    }
 }
 
 void processInput(void) {
@@ -119,23 +106,69 @@ void update(void) {
     cubeRotation.y+= 0.01;
     cubeRotation.z+= 0.01;
 
-    //Original Cube Points
-    for (int i = 0 ; i < N_POINTS ; i++) {
-        vec3_t point = cubePoints[i];
-
-        vec3_t transformedPoint = rotateAroundX(point,cubeRotation.x);
-        transformedPoint = rotateAroundY(transformedPoint,cubeRotation.y);
-        transformedPoint = rotateAroundZ(transformedPoint,cubeRotation.z);
 
 
 
-        //Move the points away from the camera
-        transformedPoint.z -= cameraPosition.z;
-        //Project the current point (its single point)
-        vec2_t projectedPoint = project(transformedPoint);
-        //Then save them in the array of projected points
-        projectedPoints[i] = projectedPoint;
+    //Goes through triangular faces (Explained with claude so I wont lose myself again when I look back)
+    for (int i = 0; i < N_MESH_FACES; i ++) {
+        face_t meshFace = meshFaces[i];
+        vec3_t faceVertices[3];
+        faceVertices[0] = meshVertices[meshFace.a - 1];
+        faceVertices[1] = meshVertices[meshFace.b - 1];
+        faceVertices[2] = meshVertices[meshFace.c - 1];
+
+        triangle_t projectedTriangle;
+
+        //loop all three vertices of the face and aplly rotations
+        for (int j = 0 ;j < 3; j ++) {
+            vec3_t transformedVertex = faceVertices[j];
+            transformedVertex = rotateAroundX(transformedVertex,cubeRotation.x);
+            transformedVertex = rotateAroundY(transformedVertex,cubeRotation.y);
+            transformedVertex = rotateAroundZ(transformedVertex,cubeRotation.z);
+
+            //Translate the vertex avay from the camera
+            transformedVertex.z-= cameraPosition.z;
+
+            vec2_t projectedPoint = project(transformedVertex);
+
+            //After projecting them (And before saving them) move and scale them to the middle of the screen
+            projectedPoint.x += (windowWidth/2);
+            projectedPoint.y += (windowHeight/2);
+
+            //Now we can pass it to this arrray
+            projectedTriangle.points[j] = projectedPoint;
+
+        }
+
+        // Lastly save the projected triangle in the array of triangles to render
+        trianglesToRender[i] =projectedTriangle;
+
     }
+
+    /*
+* VERTEX INDEXING EXPLANATION:
+*
+* The meshFaces array stores vertex indices using 1-based numbering (1, 2, 3, etc.)
+* This is common in 3D file formats like OBJ files.
+*
+* But C arrays use 0-based indexing, so we need to subtract 1 when looking up vertices:
+*   - Face says "vertex 1" → We access meshVertices[0]
+*   - Face says "vertex 2" → We access meshVertices[1]
+*   - Face says "vertex 3" → We access meshVertices[2]
+*
+* Example for first face (front triangle):
+*   meshFace.a = 1  →  meshVertices[1-1] = meshVertices[0] = {-1, -1, -1}
+*   meshFace.b = 2  →  meshVertices[2-1] = meshVertices[1] = {-1,  1, -1}
+*   meshFace.c = 3  →  meshVertices[3-1] = meshVertices[2] = { 1,  1, -1}
+*
+* Why indirect indexing? Each vertex can be shared by multiple faces.
+* A cube corner appears in 3 different faces, so we store it once and reference it 3 times.
+*/
+
+
+
+
+
 }
 
 
@@ -147,16 +180,17 @@ void render(void) {
 
     //drawGrid();
 
-    //Loop all the projected points and trender them later on
-    for (int i = 0 ; i <N_POINTS ; i ++) {
-        vec2_t projectedPoint = projectedPoints[i];
-        drawRect(
-            projectedPoint.x + (windowWidth /2),
-            projectedPoint.y + (windowHeight/2),
-            4,
-            4,
-            0xFFFFFF00);
+
+    //Loop all the projected triangles and render them later on
+    //I used draw rect to make them appear as small vertexes
+    for (int i = 0 ; i <N_MESH_FACES ; i ++) {
+        triangle_t triangle = trianglesToRender[i];
+        drawRect(triangle.points[0].x, triangle.points[0].y,3,3,0xFFFFFF00);
+        drawRect(triangle.points[1].x, triangle.points[1].y,3,3,0xFFFFFF00);
+        drawRect(triangle.points[2].x, triangle.points[2].y,3,3,0xFFFFFF00);
+
     }
+
 
 
 
