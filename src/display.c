@@ -107,3 +107,42 @@ void drawRect(int x , int y, int width , int height , uint32_t color) {
     }
 
 }
+
+
+// Bresenham's Line Drawing Algorithm (DDA is slower so I choose to do it like this)
+void drawLine(int x0, int y0, int x1, int y1, uint32_t color) {
+    // Calculate absolute differences
+    int dx = abs(x1 - x0);
+    int dy = abs(y1 - y0);
+
+    // Determine direction of line
+    int sx = (x0 < x1) ? 1 : -1;  // Step in x direction
+    int sy = (y0 < y1) ? 1 : -1;  // Step in y direction
+
+    // Calculate initial error
+    int err = dx - dy;
+
+    // Draw the line
+    while (1) {
+        // Draw pixel at current position
+        drawPixel(x0, y0, color);
+
+        // Check if we've reached the end point
+        if (x0 == x1 && y0 == y1) break;
+
+        // Calculate error for next step
+        int e2 = 2 * err;
+
+        // Step in x direction if needed
+        if (e2 > -dy) {
+            err -= dy;
+            x0 += sx;
+        }
+
+        // Step in y direction if needed
+        if (e2 < dx) {
+            err += dx;
+            y0 += sy;
+        }
+    }
+}

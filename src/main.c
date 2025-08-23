@@ -89,6 +89,8 @@ vec2_t project(vec3_t point) {
 
 void update(void) {
 
+    //This snippet limits the FPS
+    //This was the only solution that works on MacOS and SDLdelay (since MacOS calculates ticks differently than other OS)
     int timeToWait = FRAME_TARGET_TIME - (SDL_GetTicks() - previousFrameTime);
     if (timeToWait > 0 && timeToWait <= FRAME_TARGET_TIME) {
 
@@ -107,9 +109,7 @@ void update(void) {
     cubeRotation.z+= 0.01;
 
 
-
-
-    //Goes through triangular faces (Explained with claude so I wont lose myself again when I look back)
+    //Goes through triangular faces
     for (int i = 0; i < N_MESH_FACES; i ++) {
         face_t meshFace = meshFaces[i];
         vec3_t faceVertices[3];
@@ -145,29 +145,6 @@ void update(void) {
 
     }
 
-    /*
-* VERTEX INDEXING EXPLANATION:
-*
-* The meshFaces array stores vertex indices using 1-based numbering (1, 2, 3, etc.)
-* This is common in 3D file formats like OBJ files.
-*
-* But C arrays use 0-based indexing, so we need to subtract 1 when looking up vertices:
-*   - Face says "vertex 1" → We access meshVertices[0]
-*   - Face says "vertex 2" → We access meshVertices[1]
-*   - Face says "vertex 3" → We access meshVertices[2]
-*
-* Example for first face (front triangle):
-*   meshFace.a = 1  →  meshVertices[1-1] = meshVertices[0] = {-1, -1, -1}
-*   meshFace.b = 2  →  meshVertices[2-1] = meshVertices[1] = {-1,  1, -1}
-*   meshFace.c = 3  →  meshVertices[3-1] = meshVertices[2] = { 1,  1, -1}
-*
-* Why indirect indexing? Each vertex can be shared by multiple faces.
-* A cube corner appears in 3 different faces, so we store it once and reference it 3 times.
-*/
-
-
-
-
 
 }
 
@@ -181,19 +158,14 @@ void render(void) {
     //drawGrid();
 
 
-    //Loop all the projected triangles and render them later on
-    //I used draw rect to make them appear as small vertexes
+    //Loop all the projected triangles and connect them with lines
     for (int i = 0 ; i <N_MESH_FACES ; i ++) {
         triangle_t triangle = trianglesToRender[i];
-        drawRect(triangle.points[0].x, triangle.points[0].y,3,3,0xFFFFFF00);
-        drawRect(triangle.points[1].x, triangle.points[1].y,3,3,0xFFFFFF00);
-        drawRect(triangle.points[2].x, triangle.points[2].y,3,3,0xFFFFFF00);
-
+        drawLine(triangle.points[0].x,triangle.points[0].y,triangle.points[1].x,triangle.points[1].y,0xFFFFFF00);
+        drawLine(triangle.points[1].x,triangle.points[1].y,triangle.points[2].x,triangle.points[2].y,0xFFFFFF00);
+        drawLine(triangle.points[2].x,triangle.points[2].y,triangle.points[0].x,triangle.points[0].y,0xFFFFFF00);
     }
-
-
-
-
+    //Its ready to be rendered now
     renderColorBuffer();
 
     SDL_RenderPresent(renderer);

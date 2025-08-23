@@ -6,7 +6,7 @@
 #include <SDL2/SDL.h>
 
 
-#define FPS 30
+#define FPS 60
 #define FRAME_TARGET_TIME (1000/FPS)
 
 extern SDL_Window* window;
@@ -26,5 +26,6 @@ void drawPixel(int x, int y, uint32_t color);
 void destroyWindow(void);
 void clearColorBuffer(uint32_t color);
 void renderColorBuffer(void);
+void drawLine(int x0, int y0, int x1, int y1, uint32_t color);
 
 #endif //DISPLAY_H
