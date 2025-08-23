@@ -28,6 +28,8 @@ vec3_t cubeRotation = {.x = 0, .y = 0, .z = 0};
 
 float fovFactor = 640;
 
+uint32_t previousFrameTime = 0;
+
 
 int main(void) {
     isRunning = initializeWindow();
@@ -99,9 +101,23 @@ vec2_t project(vec3_t point) {
 }
 
 void update(void) {
-    cubeRotation.x+= 0.001;
-    cubeRotation.y+= 0.001;
-    cubeRotation.z+= 0.001;
+
+    int timeToWait = FRAME_TARGET_TIME - (SDL_GetTicks() - previousFrameTime);
+    if (timeToWait > 0 && timeToWait <= FRAME_TARGET_TIME) {
+
+        if (timeToWait > 5) {
+            SDL_Delay(timeToWait - 5);
+        }
+
+        while (!SDL_GetTicks() - previousFrameTime < FRAME_TARGET_TIME);
+
+
+    }
+    previousFrameTime = SDL_GetTicks();
+
+    cubeRotation.x+= 0.01;
+    cubeRotation.y+= 0.01;
+    cubeRotation.z+= 0.01;
 
     //Original Cube Points
     for (int i = 0 ; i < N_POINTS ; i++) {
