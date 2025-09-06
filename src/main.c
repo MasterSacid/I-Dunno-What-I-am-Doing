@@ -66,7 +66,7 @@ void setup(void) {
         );
 
     //loadCubeMeshData();
-    loadObjFileData("./assets/Car 01/Car.obj");
+    loadObjFileData("../assets/Car 01/Car.obj");
 
 }
 
@@ -88,7 +88,7 @@ void processInput(void) {
 vec2_t project(vec3_t point) {
     vec2_t projectedPoint = {
         .x = (fovFactor * point.x) / point.z,
-        .y = (fovFactor * point.y) / point.z
+        .y = -(fovFactor * point.y) / point.z
     };
     return projectedPoint;
 }
@@ -132,9 +132,9 @@ void update(void) {
         //loop all three vertices of the face and aplly rotations
         for (int j = 0 ;j < 3; j ++) {
             vec3_t transformedVertex = faceVertices[j];
-            transformedVertex = rotateAroundX(transformedVertex,mesh.rotation.x);
+            //transformedVertex = rotateAroundX(transformedVertex,mesh.rotation.x);
             transformedVertex = rotateAroundY(transformedVertex,mesh.rotation.y);
-            transformedVertex = rotateAroundZ(transformedVertex,mesh.rotation.z);
+            //transformedVertex = rotateAroundZ(transformedVertex,mesh.rotation.z);
 
             //Translate the vertex avay from the camera
             transformedVertex.z-= cameraPosition.z;
