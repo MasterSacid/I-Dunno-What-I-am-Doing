@@ -5,6 +5,7 @@
 #include "display.h"
 #include "vector.h"
 #include "mesh.h"
+#include "array.h"
 
 
 void setup(void);
@@ -16,17 +17,18 @@ void update(void);
 void render(void);
 
 vec2_t project(vec3_t point);
+void freeResources (void);
 
 
 bool isRunning = false;
 
 vec3_t cameraPosition = {.x=0,.y=0,.z=-5};
-vec3_t cubeRotation = {.x = 0, .y = 0, .z = 0};
 
 float fovFactor = 640;
 
 uint32_t previousFrameTime = 0;
-triangle_t trianglesToRender[N_MESH_FACES];
+
+triangle_t* trianglesToRender = NULL;
 
 
 int main(void) {
@@ -43,6 +45,7 @@ int main(void) {
     }
 
     destroyWindow();
+    freeResources();
 
 
     return 0;
@@ -61,6 +64,9 @@ void setup(void) {
         windowWidth,
         windowHeight
         );
+
+    //loadCubeMeshData();
+    loadObjFileData("./assets/Car 01/Car.obj");
 
 }
 
@@ -104,27 +110,31 @@ void update(void) {
     }
     previousFrameTime = SDL_GetTicks();
 
-    cubeRotation.x+= 0.01;
-    cubeRotation.y+= 0.01;
-    cubeRotation.z+= 0.01;
+    //Initialize the array of triangles
+    trianglesToRender = NULL;
+
+    mesh.rotation.x+= 0.01;
+    mesh.rotation.y+= 0.01;
+    mesh.rotation.z+= 0.01;
 
 
+    int numFaces= array_length(mesh.faces);
     //Goes through triangular faces
-    for (int i = 0; i < N_MESH_FACES; i ++) {
-        face_t meshFace = meshFaces[i];
+    for (int i = 0; i < numFaces; i ++) {
+        face_t meshFace = mesh.faces[i];
         vec3_t faceVertices[3];
-        faceVertices[0] = meshVertices[meshFace.a - 1];
-        faceVertices[1] = meshVertices[meshFace.b - 1];
-        faceVertices[2] = meshVertices[meshFace.c - 1];
+        faceVertices[0] = mesh.vertices[meshFace.a - 1];
+        faceVertices[1] = mesh.vertices[meshFace.b - 1];
+        faceVertices[2] = mesh.vertices[meshFace.c - 1];
 
         triangle_t projectedTriangle;
 
         //loop all three vertices of the face and aplly rotations
         for (int j = 0 ;j < 3; j ++) {
             vec3_t transformedVertex = faceVertices[j];
-            transformedVertex = rotateAroundX(transformedVertex,cubeRotation.x);
-            transformedVertex = rotateAroundY(transformedVertex,cubeRotation.y);
-            transformedVertex = rotateAroundZ(transformedVertex,cubeRotation.z);
+            transformedVertex = rotateAroundX(transformedVertex,mesh.rotation.x);
+            transformedVertex = rotateAroundY(transformedVertex,mesh.rotation.y);
+            transformedVertex = rotateAroundZ(transformedVertex,mesh.rotation.z);
 
             //Translate the vertex avay from the camera
             transformedVertex.z-= cameraPosition.z;
@@ -141,7 +151,7 @@ void update(void) {
         }
 
         // Lastly save the projected triangle in the array of triangles to render
-        trianglesToRender[i] =projectedTriangle;
+        array_push(trianglesToRender,projectedTriangle);
 
     }
 
@@ -159,14 +169,31 @@ void render(void) {
 
 
     //Loop all the projected triangles and connect them with lines
-    for (int i = 0 ; i <N_MESH_FACES ; i ++) {
+    int numOfTriangles = array_length(trianglesToRender);
+
+
+    for (int i = 0 ; i < numOfTriangles ; i ++) {
+
         triangle_t triangle = trianglesToRender[i];
         drawLine(triangle.points[0].x,triangle.points[0].y,triangle.points[1].x,triangle.points[1].y,0xFFFFFF00);
         drawLine(triangle.points[1].x,triangle.points[1].y,triangle.points[2].x,triangle.points[2].y,0xFFFFFF00);
         drawLine(triangle.points[2].x,triangle.points[2].y,triangle.points[0].x,triangle.points[0].y,0xFFFFFF00);
     }
+
+
+    //FREE THE ARRAY FIRST!!!!!!!!!!!!!!!!
+    array_free(trianglesToRender);
     //Its ready to be rendered now
     renderColorBuffer();
 
     SDL_RenderPresent(renderer);
+}
+
+void freeResources (void) {
+    free(colorBuffer);
+    array_free(mesh.faces);
+    array_free(mesh.vertices);
+
+
+
 }

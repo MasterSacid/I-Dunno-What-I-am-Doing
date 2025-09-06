@@ -19,6 +19,8 @@ add_executable(renderingInC src/main.c
         src/mesh.h
         src/triangle.c
         src/triangle.h
+        src/array.h
+        src/array.c
 )
 
 
