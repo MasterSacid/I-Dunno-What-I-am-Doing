@@ -2,7 +2,20 @@
 
 
 
-//TODO Implementation of all vector functions
+
+//-------------------- Vec2D Functions are here -----------------------
+float vec2Length (vec2_t v) {
+    return sqrt(v.x *v.x + v.y*v.y);
+}
+
+
+//--------------------- Vec3D functions are here ------------------------
+float vec3Length (vec3_t v) {
+    return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+
+
 
 vec3_t rotateAroundX(vec3_t v , float angle) {
     vec3_t rotatedVector = {
