@@ -113,9 +113,9 @@ void update(void) {
     //Initialize the array of triangles
     trianglesToRender = NULL;
 
-    mesh.rotation.x+= 0.01;
+    mesh.rotation.x+= 0.00;
     mesh.rotation.y+= 0.01;
-    mesh.rotation.z+= 0.01;
+    mesh.rotation.z+= 0.00;
 
 
     int numFaces= array_length(mesh.faces);

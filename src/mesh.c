@@ -53,7 +53,7 @@ void loadCubeMeshData(void) {
         vec3_t cubeVertex = cubeVertices[i];
         array_push(mesh.vertices,cubeVertex);
     }
-    for (int i = 0; i <N_CUBE_VERTICES; i++) {
+    for (int i = 0; i <N_CUBE_FACES; i++) {
         face_t cubeFace = cubeFaces[i];
         array_push(mesh.faces,cubeFace);
     }
