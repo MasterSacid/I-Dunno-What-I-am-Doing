@@ -22,7 +22,7 @@ void freeResources (void);
 
 bool isRunning = false;
 
-vec3_t cameraPosition = {.x=0,.y=0,.z=-5};
+vec3_t cameraPosition = {0,0,0};
 
 float fovFactor = 640;
 
@@ -65,8 +65,8 @@ void setup(void) {
         windowHeight
         );
 
-    //loadCubeMeshData();
-    loadObjFileData("../assets/Car 01/Car.obj");
+    loadCubeMeshData();
+    //loadObjFileData("../assets/Car 01/Car.obj");
 
 }
 
@@ -129,17 +129,45 @@ void update(void) {
 
         triangle_t projectedTriangle;
 
+        vec3_t transformedVertices[3];
+
         //loop all three vertices of the face and aplly rotations
         for (int j = 0 ;j < 3; j ++) {
             vec3_t transformedVertex = faceVertices[j];
-            //transformedVertex = rotateAroundX(transformedVertex,mesh.rotation.x);
+            transformedVertex = rotateAroundX(transformedVertex,mesh.rotation.x);
             transformedVertex = rotateAroundY(transformedVertex,mesh.rotation.y);
-            //transformedVertex = rotateAroundZ(transformedVertex,mesh.rotation.z);
+            transformedVertex = rotateAroundZ(transformedVertex,mesh.rotation.z);
 
             //Translate the vertex avay from the camera
-            transformedVertex.z-= cameraPosition.z;
+            transformedVertex.z += 5;
+            //Save it into the global loop
+            transformedVertices[j] = transformedVertex;
+        }
+        //-------------- Make the backface culling --------- DONT TOUCH THIS
+        //Dont forget this is in CLOCKWISE ORDER
+        vec3_t vectorA = transformedVertices[0];
+        vec3_t vectorB = transformedVertices[1];
+        vec3_t vectorC = transformedVertices[2];
 
-            vec2_t projectedPoint = project(transformedVertex);
+        //Find the vector between points
+        vec3_t vectorAB = vec3Subtract(vectorB,vectorA);
+        vec3_t vectorAC = vec3Subtract(vectorC,vectorA);
+
+        //Compute the face normal using the cross product
+        vec3_t normal = vec3Cross(vectorAB,vectorAC);
+
+        //Find the vector between point A in the triangle (can be any point) and the camera origin (For Camera ray)
+        vec3_t cameraRay = vec3Subtract(cameraPosition,vectorA);
+
+        //Calculate the alignment between the face and the camera
+        float faceNormalAndCameraRayDotProduct = vec3DotProduct(cameraRay,normal);
+
+        if (faceNormalAndCameraRayDotProduct < 0)
+            continue; // we bypass everything
+
+        //Now we do projection and loop all the faces if it is not at the back
+        for (int j = 0; j <3 ; j ++) {
+            vec2_t projectedPoint = project(transformedVertices[j]);
 
             //After projecting them (And before saving them) move and scale them to the middle of the screen
             projectedPoint.x += (windowWidth/2);
@@ -147,8 +175,8 @@ void update(void) {
 
             //Now we can pass it to this arrray
             projectedTriangle.points[j] = projectedPoint;
-
         }
+
 
         // Lastly save the projected triangle in the array of triangles to render
         array_push(trianglesToRender,projectedTriangle);
