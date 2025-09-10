@@ -17,6 +17,7 @@ vec2_t vec2Subtract(vec2_t a, vec2_t b);
 vec2_t vec2Multiply(vec2_t v, float factor);
 vec2_t vec2Divide(vec2_t v, float factor);
 float vec2DotProduct(vec2_t a, vec2_t b);
+void vec2Normalize (vec2_t* v);
 
 
 
@@ -28,6 +29,7 @@ vec3_t vec3Multiply(vec3_t v, float factor);
 vec3_t vec3Divide(vec3_t v, float factor);
 vec3_t vec3Cross(vec3_t a , vec3_t b);
 float vec3DotProduct(vec3_t a, vec3_t b);
+void vec3Normalize(vec3_t* v);
 
 
 

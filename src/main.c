@@ -113,9 +113,9 @@ void update(void) {
     //Initialize the array of triangles
     trianglesToRender = NULL;
 
-    mesh.rotation.x+= 0.00;
+    mesh.rotation.x+= 0.01;
     mesh.rotation.y+= 0.01;
-    mesh.rotation.z+= 0.00;
+    mesh.rotation.z+= 0.01;
 
 
     int numFaces= array_length(mesh.faces);
@@ -152,9 +152,14 @@ void update(void) {
         //Find the vector between points
         vec3_t vectorAB = vec3Subtract(vectorB,vectorA);
         vec3_t vectorAC = vec3Subtract(vectorC,vectorA);
+        vec3Normalize(&vectorAB);
+        vec3Normalize(&vectorAC);
 
         //Compute the face normal using the cross product
         vec3_t normal = vec3Cross(vectorAB,vectorAC);
+
+        //Normalize the face normal
+        vec3Normalize(&normal);
 
         //Find the vector between point A in the triangle (can be any point) and the camera origin (For Camera ray)
         vec3_t cameraRay = vec3Subtract(cameraPosition,vectorA);

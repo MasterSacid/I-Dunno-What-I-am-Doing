@@ -42,6 +42,13 @@ float vec2DotProduct(vec2_t a, vec2_t b) {
     return (a.x * b.x) + (a.y * b.y);
 }
 
+void vec2Normalize (vec2_t* v) {
+    float length = sqrt(v->x * v->x + v->y * v->y);
+    v -> x /= length;
+    v -> y /= length;
+}
+
+
 
 
 //--------------------- Vec3D functions are here ------------------------
@@ -129,3 +136,11 @@ vec3_t rotateAroundZ(vec3_t v, float angle) {
     };
     return rotatedVector;
 }
+
+void vec3Normalize(vec3_t* v) {
+    float length = sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
+    v -> x /= length;
+    v -> y /= length;
+    v -> z /= length;
+}
+
