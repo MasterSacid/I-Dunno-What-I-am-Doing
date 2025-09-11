@@ -76,10 +76,10 @@ void drawFilledTriangle(int x0, int y0, int x1 , int y1, int x2, int y2,uint32_t
         int Mx = ((float)((x2- x0) * (y1-y0)) / (float) (y2 - y0)) + x0;
 
         //Draw flat - bottom triangle
-        fillFlatBottomTriangle(x0,y0,x1,y1,Mx,My,0xFFFFFF00);
+        fillFlatBottomTriangle(x0,y0,x1,y1,Mx,My,color);
 
         //Draw flat -top triangle
-        fillFlatTopTriangle(x1,y1,Mx,My,x2,y2,0xFFFFFF00);
+        fillFlatTopTriangle(x1,y1,Mx,My,x2,y2,color);
     }
 
 
