@@ -146,7 +146,7 @@ void update(void) {
         faceVertices[1] = mesh.vertices[meshFace.b - 1];
         faceVertices[2] = mesh.vertices[meshFace.c - 1];
 
-        triangle_t projectedTriangle;
+
 
         vec3_t transformedVertices[3];
 
@@ -192,19 +192,24 @@ void update(void) {
                 continue; // we bypass everything
         }
 
-
+        vec2_t projectedPoints[3];
         //Now we do projection and loop all the faces if it is not at the back
         for (int j = 0; j <3 ; j ++) {
-            vec2_t projectedPoint = project(transformedVertices[j]);
+             projectedPoints[j] = project(transformedVertices[j]);
 
             //After projecting them (And before saving them) move and scale them to the middle of the screen
-            projectedPoint.x += (windowWidth/2);
-            projectedPoint.y += (windowHeight/2);
-
-            //Now we can pass it to this arrray
-            projectedTriangle.points[j] = projectedPoint;
+            projectedPoints[j].x += (windowWidth/2);
+            projectedPoints[j].y += (windowHeight/2);
         }
 
+        triangle_t projectedTriangle = {
+            .points = {
+              {projectedPoints[0].x,projectedPoints[0].y},
+              {projectedPoints[1].x,projectedPoints[1].y},
+              {projectedPoints[2].x,projectedPoints[2].y},
+            },
+            .color = meshFace.color
+        };
 
         // Lastly save the projected triangle in the array of triangles to render
         array_push(trianglesToRender,projectedTriangle);
@@ -237,7 +242,7 @@ void render(void) {
                 triangle.points[0].x, triangle.points[0].y,
                 triangle.points[1].x, triangle.points[1].y,
                 triangle.points[2].x, triangle.points[2].y,
-                0xFFFFD700
+                triangle.color
             );
         }
         if (renderMode== RENDER_WIRE || renderMode == RENDER_WIRE_VERTEX || renderMode == RENDER_FILL_TRIANGLE_WIRE) {
