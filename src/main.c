@@ -30,6 +30,9 @@ uint32_t previousFrameTime = 0;
 
 triangle_t* trianglesToRender = NULL;
 
+int renderMode = 0;
+bool backCullOn = true;
+
 
 int main(void) {
     isRunning = initializeWindow();
@@ -81,7 +84,20 @@ void processInput(void) {
         case SDL_KEYDOWN:
             if (event.key.keysym.sym == SDLK_ESCAPE)
                 isRunning = false;
+            if (event.key.keysym.sym == SDLK_1)
+                renderMode = 1;
+            if (event.key.keysym.sym == SDLK_2)
+                renderMode = 2;
+            if (event.key.keysym.sym == SDLK_3)
+                renderMode = 3;
+            if (event.key.keysym.sym == SDLK_4)
+                renderMode = 4;
+            if (event.key.keysym.sym == SDLK_c)
+                backCullOn = true;
+            if (event.key.keysym.sym == SDLK_d)
+                backCullOn = false;
             break;
+
     }
 }
 //This function receives a 3D vector and returns a projected 2D point
@@ -205,13 +221,30 @@ void render(void) {
     int numOfTriangles = array_length(trianglesToRender);
 
 
-    for (int i = 0 ; i < numOfTriangles ; i ++) {
-
+    //Filled Triangles
+    for (int i = 0; i < numOfTriangles; i++) {
         triangle_t triangle = trianglesToRender[i];
-        drawLine(triangle.points[0].x,triangle.points[0].y,triangle.points[1].x,triangle.points[1].y,0xFFFFFF00);
-        drawLine(triangle.points[1].x,triangle.points[1].y,triangle.points[2].x,triangle.points[2].y,0xFFFFFF00);
-        drawLine(triangle.points[2].x,triangle.points[2].y,triangle.points[0].x,triangle.points[0].y,0xFFFFFF00);
+        drawFilledTriangle(
+            triangle.points[0].x, triangle.points[0].y,
+            triangle.points[1].x, triangle.points[1].y,
+            triangle.points[2].x, triangle.points[2].y,
+            0xFFFFFF00
+        );
     }
+
+    //Unfilled Triangles for wireframe view
+    for (int i = 0; i < numOfTriangles; i++) {
+        triangle_t triangle = trianglesToRender[i];
+        drawTriangle(
+            triangle.points[0].x, triangle.points[0].y,
+            triangle.points[1].x, triangle.points[1].y,
+            triangle.points[2].x, triangle.points[2].y,
+            0xFF000000
+        );
+    }
+
+
+
 
 
     //FREE THE ARRAY FIRST!!!!!!!!!!!!!!!!

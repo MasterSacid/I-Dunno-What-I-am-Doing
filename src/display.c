@@ -145,3 +145,10 @@ void drawLine(int x0, int y0, int x1, int y1, uint32_t color) {
         }
     }
 }
+
+void drawTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
+    // Draw the three edges of the triangle
+    drawLine(x0, y0, x1, y1, color);
+    drawLine(x1, y1, x2, y2, color);
+    drawLine(x2, y2, x0, y0, color);
+}
