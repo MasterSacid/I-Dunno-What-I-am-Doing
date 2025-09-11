@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
@@ -18,6 +19,7 @@ void render(void);
 
 vec2_t project(vec3_t point);
 void freeResources (void);
+int compareFaceDepth(const void *a, const void *b);
 
 
 bool isRunning = false;
@@ -202,19 +204,27 @@ void update(void) {
             projectedPoints[j].y += (windowHeight/2);
         }
 
+        //Calculate the average depth for each face based on the vertices after transformation
+        float avgDepth = (transformedVertices[0].z + transformedVertices [1].z + transformedVertices [2].z) / 3.0;
+
         triangle_t projectedTriangle = {
             .points = {
               {projectedPoints[0].x,projectedPoints[0].y},
               {projectedPoints[1].x,projectedPoints[1].y},
               {projectedPoints[2].x,projectedPoints[2].y},
             },
-            .color = meshFace.color
+            .color = meshFace.color,
+            .avgDepth = avgDepth
         };
 
         // Lastly save the projected triangle in the array of triangles to render
         array_push(trianglesToRender,projectedTriangle);
-
     }
+
+    //Sorting the faces and using painters algorithm to determine the order
+    int numTrianglesToSort = array_length(trianglesToRender);
+    qsort(trianglesToRender, numTrianglesToSort, sizeof(triangle_t), compareFaceDepth);
+
 
 
 }
@@ -229,13 +239,12 @@ void render(void) {
     //drawGrid();
 
 
-    //Loop all the projected triangles and connect them with lines
+
+
     int numOfTriangles = array_length(trianglesToRender);
-
-
-    //Filled Triangles
     for (int i = 0; i < numOfTriangles; i++) {
         triangle_t triangle = trianglesToRender[i];
+
         //Filled Triangle
         if (renderMode == RENDER_FILL_TRIANGLE || renderMode == RENDER_FILL_TRIANGLE_WIRE) {
             drawFilledTriangle(
@@ -285,7 +294,16 @@ void freeResources (void) {
     free(colorBuffer);
     array_free(mesh.faces);
     array_free(mesh.vertices);
+}
 
+int compareFaceDepth(const void *a, const void *b) {
+    const triangle_t *triangleA = (const triangle_t *)a;
+    const triangle_t *triangleB = (const triangle_t *)b;
 
-
+    if (triangleA->avgDepth > triangleB->avgDepth) {
+        return -1;  // triangleA comes before triangleB
+    } else if (triangleA->avgDepth < triangleB->avgDepth) {
+        return 1;   // triangleB comes before triangleA
+    }
+    return 0;  // Equal depth
 }
