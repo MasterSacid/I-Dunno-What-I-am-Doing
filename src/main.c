@@ -30,8 +30,7 @@ uint32_t previousFrameTime = 0;
 
 triangle_t* trianglesToRender = NULL;
 
-int renderMode = 0;
-bool backCullOn = true;
+
 
 
 int main(void) {
@@ -56,6 +55,10 @@ int main(void) {
 
 
 void setup(void) {
+
+    renderMode = RENDER_WIRE;
+    cullMode = CULL_BACKFACE;
+
     //Allocate the required memory to hold the color buffer
     colorBuffer = (uint32_t *) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
 
@@ -85,17 +88,17 @@ void processInput(void) {
             if (event.key.keysym.sym == SDLK_ESCAPE)
                 isRunning = false;
             if (event.key.keysym.sym == SDLK_1)
-                renderMode = 1;
+                renderMode = RENDER_WIRE_VERTEX;
             if (event.key.keysym.sym == SDLK_2)
-                renderMode = 2;
+                renderMode = RENDER_WIRE;
             if (event.key.keysym.sym == SDLK_3)
-                renderMode = 3;
+                renderMode = RENDER_FILL_TRIANGLE;
             if (event.key.keysym.sym == SDLK_4)
-                renderMode = 4;
+                renderMode = RENDER_FILL_TRIANGLE_WIRE;
             if (event.key.keysym.sym == SDLK_c)
-                backCullOn = true;
+                cullMode = CULL_BACKFACE;
             if (event.key.keysym.sym == SDLK_d)
-                backCullOn = false;
+                cullMode = CULL_NONE;
             break;
 
     }
@@ -159,32 +162,36 @@ void update(void) {
             //Save it into the global loop
             transformedVertices[j] = transformedVertex;
         }
-        //-------------- Make the backface culling --------- DONT TOUCH THIS
-        //Dont forget this is in CLOCKWISE ORDER
-        vec3_t vectorA = transformedVertices[0];
-        vec3_t vectorB = transformedVertices[1];
-        vec3_t vectorC = transformedVertices[2];
 
-        //Find the vector between points
-        vec3_t vectorAB = vec3Subtract(vectorB,vectorA);
-        vec3_t vectorAC = vec3Subtract(vectorC,vectorA);
-        vec3Normalize(&vectorAB);
-        vec3Normalize(&vectorAC);
+        if (cullMode == CULL_BACKFACE) {
+            //-------------- Make the backface culling --------- DONT TOUCH THIS
+            //Dont forget this is in CLOCKWISE ORDER
+            vec3_t vectorA = transformedVertices[0];
+            vec3_t vectorB = transformedVertices[1];
+            vec3_t vectorC = transformedVertices[2];
 
-        //Compute the face normal using the cross product
-        vec3_t normal = vec3Cross(vectorAB,vectorAC);
+            //Find the vector between points
+            vec3_t vectorAB = vec3Subtract(vectorB,vectorA);
+            vec3_t vectorAC = vec3Subtract(vectorC,vectorA);
+            vec3Normalize(&vectorAB);
+            vec3Normalize(&vectorAC);
 
-        //Normalize the face normal
-        vec3Normalize(&normal);
+            //Compute the face normal using the cross product
+            vec3_t normal = vec3Cross(vectorAB,vectorAC);
 
-        //Find the vector between point A in the triangle (can be any point) and the camera origin (For Camera ray)
-        vec3_t cameraRay = vec3Subtract(cameraPosition,vectorA);
+            //Normalize the face normal
+            vec3Normalize(&normal);
 
-        //Calculate the alignment between the face and the camera
-        float faceNormalAndCameraRayDotProduct = vec3DotProduct(cameraRay,normal);
+            //Find the vector between point A in the triangle (can be any point) and the camera origin (For Camera ray)
+            vec3_t cameraRay = vec3Subtract(cameraPosition,vectorA);
 
-        if (faceNormalAndCameraRayDotProduct < 0)
-            continue; // we bypass everything
+            //Calculate the alignment between the face and the camera
+            float faceNormalAndCameraRayDotProduct = vec3DotProduct(cameraRay,normal);
+
+            if (faceNormalAndCameraRayDotProduct < 0)
+                continue; // we bypass everything
+        }
+
 
         //Now we do projection and loop all the faces if it is not at the back
         for (int j = 0; j <3 ; j ++) {
@@ -224,24 +231,38 @@ void render(void) {
     //Filled Triangles
     for (int i = 0; i < numOfTriangles; i++) {
         triangle_t triangle = trianglesToRender[i];
-        drawFilledTriangle(
-            triangle.points[0].x, triangle.points[0].y,
-            triangle.points[1].x, triangle.points[1].y,
-            triangle.points[2].x, triangle.points[2].y,
-            0xFFFFFF00
-        );
+        //Filled Triangle
+        if (renderMode == RENDER_FILL_TRIANGLE || renderMode == RENDER_FILL_TRIANGLE_WIRE) {
+            drawFilledTriangle(
+                triangle.points[0].x, triangle.points[0].y,
+                triangle.points[1].x, triangle.points[1].y,
+                triangle.points[2].x, triangle.points[2].y,
+                0xFFFFD700
+            );
+        }
+        if (renderMode== RENDER_WIRE || renderMode == RENDER_WIRE_VERTEX || renderMode == RENDER_FILL_TRIANGLE_WIRE) {
+            //Unfilled Triangles for wireframe view
+            for (int i = 0; i < numOfTriangles; i++) {
+                triangle_t triangle = trianglesToRender[i];
+                drawTriangle(
+                    triangle.points[0].x, triangle.points[0].y,
+                    triangle.points[1].x, triangle.points[1].y,
+                    triangle.points[2].x, triangle.points[2].y,
+                    0xFF6A0DAD
+                );
+            }
+        }
+
+        if (renderMode == RENDER_WIRE_VERTEX) {
+            drawRect(triangle.points[0].x - 5,triangle.points[0].y - 5,10,10,0xFFFF0000);
+            drawRect(triangle.points[1].x - 5,triangle.points[1].y - 5,10,10,0xFFFF0000);
+            drawRect(triangle.points[2].x - 5,triangle.points[2].y - 5,10,10,0xFFFF0000);
+
+        }
+
     }
 
-    //Unfilled Triangles for wireframe view
-    for (int i = 0; i < numOfTriangles; i++) {
-        triangle_t triangle = trianglesToRender[i];
-        drawTriangle(
-            triangle.points[0].x, triangle.points[0].y,
-            triangle.points[1].x, triangle.points[1].y,
-            triangle.points[2].x, triangle.points[2].y,
-            0xFF000000
-        );
-    }
+
 
 
 
