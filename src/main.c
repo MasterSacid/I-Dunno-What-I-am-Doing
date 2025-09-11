@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
@@ -18,6 +19,7 @@ void render(void);
 
 vec2_t project(vec3_t point);
 void freeResources (void);
+int compareFaceDepth(const void *a, const void *b);
 
 
 bool isRunning = false;
@@ -29,6 +31,8 @@ float fovFactor = 640;
 uint32_t previousFrameTime = 0;
 
 triangle_t* trianglesToRender = NULL;
+
+
 
 
 int main(void) {
@@ -53,6 +57,10 @@ int main(void) {
 
 
 void setup(void) {
+
+    renderMode = RENDER_WIRE;
+    cullMode = CULL_BACKFACE;
+
     //Allocate the required memory to hold the color buffer
     colorBuffer = (uint32_t *) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
 
@@ -81,7 +89,20 @@ void processInput(void) {
         case SDL_KEYDOWN:
             if (event.key.keysym.sym == SDLK_ESCAPE)
                 isRunning = false;
+            if (event.key.keysym.sym == SDLK_1)
+                renderMode = RENDER_WIRE_VERTEX;
+            if (event.key.keysym.sym == SDLK_2)
+                renderMode = RENDER_WIRE;
+            if (event.key.keysym.sym == SDLK_3)
+                renderMode = RENDER_FILL_TRIANGLE;
+            if (event.key.keysym.sym == SDLK_4)
+                renderMode = RENDER_FILL_TRIANGLE_WIRE;
+            if (event.key.keysym.sym == SDLK_c)
+                cullMode = CULL_BACKFACE;
+            if (event.key.keysym.sym == SDLK_d)
+                cullMode = CULL_NONE;
             break;
+
     }
 }
 //This function receives a 3D vector and returns a projected 2D point
@@ -127,7 +148,7 @@ void update(void) {
         faceVertices[1] = mesh.vertices[meshFace.b - 1];
         faceVertices[2] = mesh.vertices[meshFace.c - 1];
 
-        triangle_t projectedTriangle;
+
 
         vec3_t transformedVertices[3];
 
@@ -143,50 +164,67 @@ void update(void) {
             //Save it into the global loop
             transformedVertices[j] = transformedVertex;
         }
-        //-------------- Make the backface culling --------- DONT TOUCH THIS
-        //Dont forget this is in CLOCKWISE ORDER
-        vec3_t vectorA = transformedVertices[0];
-        vec3_t vectorB = transformedVertices[1];
-        vec3_t vectorC = transformedVertices[2];
 
-        //Find the vector between points
-        vec3_t vectorAB = vec3Subtract(vectorB,vectorA);
-        vec3_t vectorAC = vec3Subtract(vectorC,vectorA);
-        vec3Normalize(&vectorAB);
-        vec3Normalize(&vectorAC);
+        if (cullMode == CULL_BACKFACE) {
+            //-------------- Make the backface culling --------- DONT TOUCH THIS
+            //Dont forget this is in CLOCKWISE ORDER
+            vec3_t vectorA = transformedVertices[0];
+            vec3_t vectorB = transformedVertices[1];
+            vec3_t vectorC = transformedVertices[2];
 
-        //Compute the face normal using the cross product
-        vec3_t normal = vec3Cross(vectorAB,vectorAC);
+            //Find the vector between points
+            vec3_t vectorAB = vec3Subtract(vectorB,vectorA);
+            vec3_t vectorAC = vec3Subtract(vectorC,vectorA);
+            vec3Normalize(&vectorAB);
+            vec3Normalize(&vectorAC);
 
-        //Normalize the face normal
-        vec3Normalize(&normal);
+            //Compute the face normal using the cross product
+            vec3_t normal = vec3Cross(vectorAB,vectorAC);
 
-        //Find the vector between point A in the triangle (can be any point) and the camera origin (For Camera ray)
-        vec3_t cameraRay = vec3Subtract(cameraPosition,vectorA);
+            //Normalize the face normal
+            vec3Normalize(&normal);
 
-        //Calculate the alignment between the face and the camera
-        float faceNormalAndCameraRayDotProduct = vec3DotProduct(cameraRay,normal);
+            //Find the vector between point A in the triangle (can be any point) and the camera origin (For Camera ray)
+            vec3_t cameraRay = vec3Subtract(cameraPosition,vectorA);
 
-        if (faceNormalAndCameraRayDotProduct < 0)
-            continue; // we bypass everything
+            //Calculate the alignment between the face and the camera
+            float faceNormalAndCameraRayDotProduct = vec3DotProduct(cameraRay,normal);
 
-        //Now we do projection and loop all the faces if it is not at the back
-        for (int j = 0; j <3 ; j ++) {
-            vec2_t projectedPoint = project(transformedVertices[j]);
-
-            //After projecting them (And before saving them) move and scale them to the middle of the screen
-            projectedPoint.x += (windowWidth/2);
-            projectedPoint.y += (windowHeight/2);
-
-            //Now we can pass it to this arrray
-            projectedTriangle.points[j] = projectedPoint;
+            if (faceNormalAndCameraRayDotProduct < 0)
+                continue; // we bypass everything
         }
 
+        vec2_t projectedPoints[3];
+        //Now we do projection and loop all the faces if it is not at the back
+        for (int j = 0; j <3 ; j ++) {
+             projectedPoints[j] = project(transformedVertices[j]);
+
+            //After projecting them (And before saving them) move and scale them to the middle of the screen
+            projectedPoints[j].x += (windowWidth/2);
+            projectedPoints[j].y += (windowHeight/2);
+        }
+
+        //Calculate the average depth for each face based on the vertices after transformation
+        float avgDepth = (transformedVertices[0].z + transformedVertices [1].z + transformedVertices [2].z) / 3.0;
+
+        triangle_t projectedTriangle = {
+            .points = {
+              {projectedPoints[0].x,projectedPoints[0].y},
+              {projectedPoints[1].x,projectedPoints[1].y},
+              {projectedPoints[2].x,projectedPoints[2].y},
+            },
+            .color = meshFace.color,
+            .avgDepth = avgDepth
+        };
 
         // Lastly save the projected triangle in the array of triangles to render
         array_push(trianglesToRender,projectedTriangle);
-
     }
+
+    //Sorting the faces and using painters algorithm to determine the order
+    int numTrianglesToSort = array_length(trianglesToRender);
+    qsort(trianglesToRender, numTrianglesToSort, sizeof(triangle_t), compareFaceDepth);
+
 
 
 }
@@ -201,17 +239,47 @@ void render(void) {
     //drawGrid();
 
 
-    //Loop all the projected triangles and connect them with lines
+
+
     int numOfTriangles = array_length(trianglesToRender);
-
-
-    for (int i = 0 ; i < numOfTriangles ; i ++) {
-
+    for (int i = 0; i < numOfTriangles; i++) {
         triangle_t triangle = trianglesToRender[i];
-        drawLine(triangle.points[0].x,triangle.points[0].y,triangle.points[1].x,triangle.points[1].y,0xFFFFFF00);
-        drawLine(triangle.points[1].x,triangle.points[1].y,triangle.points[2].x,triangle.points[2].y,0xFFFFFF00);
-        drawLine(triangle.points[2].x,triangle.points[2].y,triangle.points[0].x,triangle.points[0].y,0xFFFFFF00);
+
+        //Filled Triangle
+        if (renderMode == RENDER_FILL_TRIANGLE || renderMode == RENDER_FILL_TRIANGLE_WIRE) {
+            drawFilledTriangle(
+                triangle.points[0].x, triangle.points[0].y,
+                triangle.points[1].x, triangle.points[1].y,
+                triangle.points[2].x, triangle.points[2].y,
+                triangle.color
+            );
+        }
+        if (renderMode== RENDER_WIRE || renderMode == RENDER_WIRE_VERTEX || renderMode == RENDER_FILL_TRIANGLE_WIRE) {
+            //Unfilled Triangles for wireframe view
+            for (int i = 0; i < numOfTriangles; i++) {
+                triangle_t triangle = trianglesToRender[i];
+                drawTriangle(
+                    triangle.points[0].x, triangle.points[0].y,
+                    triangle.points[1].x, triangle.points[1].y,
+                    triangle.points[2].x, triangle.points[2].y,
+                    0xFF6A0DAD
+                );
+            }
+        }
+
+        if (renderMode == RENDER_WIRE_VERTEX) {
+            drawRect(triangle.points[0].x - 5,triangle.points[0].y - 5,10,10,0xFFFF0000);
+            drawRect(triangle.points[1].x - 5,triangle.points[1].y - 5,10,10,0xFFFF0000);
+            drawRect(triangle.points[2].x - 5,triangle.points[2].y - 5,10,10,0xFFFF0000);
+
+        }
+
     }
+
+
+
+
+
 
 
     //FREE THE ARRAY FIRST!!!!!!!!!!!!!!!!
@@ -226,7 +294,16 @@ void freeResources (void) {
     free(colorBuffer);
     array_free(mesh.faces);
     array_free(mesh.vertices);
+}
 
+int compareFaceDepth(const void *a, const void *b) {
+    const triangle_t *triangleA = (const triangle_t *)a;
+    const triangle_t *triangleB = (const triangle_t *)b;
 
-
+    if (triangleA->avgDepth > triangleB->avgDepth) {
+        return -1;  // triangleA comes before triangleB
+    } else if (triangleA->avgDepth < triangleB->avgDepth) {
+        return 1;   // triangleB comes before triangleA
+    }
+    return 0;  // Equal depth
 }
