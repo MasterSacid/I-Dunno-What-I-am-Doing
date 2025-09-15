@@ -6,9 +6,14 @@
 typedef struct {
     float x , y;
 } vec2_t;
+
 typedef struct {
     float x,y,z;
 }vec3_t;
+
+typedef struct {
+    float x , y , z ,w;
+}vec4_t;
 
 //2D Vec functions
 float vec2Length (vec2_t v);
@@ -30,14 +35,13 @@ vec3_t vec3Divide(vec3_t v, float factor);
 vec3_t vec3Cross(vec3_t a , vec3_t b);
 float vec3DotProduct(vec3_t a, vec3_t b);
 void vec3Normalize(vec3_t* v);
-
-
-
-
-
 vec3_t rotateAroundX(vec3_t v , float angle);
 vec3_t rotateAroundY(vec3_t v , float angle);
 vec3_t rotateAroundZ(vec3_t v , float angle);
+
+//Conversion Functions
+vec4_t vec3ToVec4(vec3_t v);
+vec3_t vec4ToVec3 (vec4_t v);
 
 
 
