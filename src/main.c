@@ -8,6 +8,7 @@
 #include "mesh.h"
 #include "array.h"
 #include "matrix.h"
+#include "light.h"
 
 
 void setup(void);
@@ -32,6 +33,7 @@ mat4_t projMatrix;
 uint32_t previousFrameTime = 0;
 
 triangle_t *trianglesToRender = NULL;
+light_t light = {.position={0,0,5}};
 
 
 int main(void) {
@@ -77,8 +79,12 @@ void setup(void) {
     float zFar= 100.0;
     projMatrix= mat4MakePerspective(fov,aspect,zNear,zFar);
 
-    loadCubeMeshData();
-    //loadObjFileData("../assets/Car 01/Car.obj");
+    vec3_t sunRaysDir = { 0.0f,0.0f,1.0f};
+    vec3Normalize(&sunRaysDir);
+    light.direction = vec3Multiply(sunRaysDir,-1.0f);
+
+    //loadCubeMeshData();
+    loadObjFileData("../assets/Car 01/Car.obj");
 }
 
 void processInput(void) {
@@ -127,8 +133,8 @@ void update(void) {
 
     //Change the mesh scale, rotation, translation....  every frame
 
-    mesh.rotation.x += 0.01;
-    //mesh.rotation.y += 0.01;
+    //mesh.rotation.x += 0.01;
+    mesh.rotation.y += 0.01;
     //mesh.rotation.z += 0.01;
 
 
@@ -137,7 +143,7 @@ void update(void) {
 
 
     //mesh.translation.x += 0.01;
-    mesh.translation.z= 5.00;
+    mesh.translation.z= 6.00;
 
 
 
@@ -184,8 +190,7 @@ void update(void) {
             transformedVertices[j] = transformedVertex;
         }
 
-        if (cullMode == CULL_BACKFACE) {
-            //-------------- Make the backface culling --------- DONT TOUCH THIS
+
             //Dont forget this is in CLOCKWISE ORDER
             vec3_t vectorA = vec4ToVec3(transformedVertices[0]);
             vec3_t vectorB = vec4ToVec3(transformedVertices[1]);
@@ -209,9 +214,10 @@ void update(void) {
             //Calculate the alignment between the face and the camera
             float faceNormalAndCameraRayDotProduct = vec3DotProduct(cameraRay, normal);
 
-            if (faceNormalAndCameraRayDotProduct < 0)
+            //-------------- Make the backface culling ---------
+            if (faceNormalAndCameraRayDotProduct < 0 && cullMode == CULL_BACKFACE)
                 continue; // we bypass everything
-        }
+
 
         vec4_t projectedPoints[3];
         //Now we do projection and loop all the faces if it is not at the back
@@ -232,13 +238,21 @@ void update(void) {
         //Calculate the average depth for each face based on the vertices after transformation
         float avgDepth = (transformedVertices[0].z + transformedVertices[1].z + transformedVertices[2].z) / 3.0;
 
+
+        //Light       Shading
+        float faceNormalAndLightRayDotProduct = vec3DotProduct(normal,light.direction);
+        float ambient = 0.2f;  // Base ambient light
+        float diffuse = fmax(0.0f, faceNormalAndLightRayDotProduct);
+        float intensity = ambient + (1.0f - ambient) * diffuse;
+        uint32_t shadedColor = lightApplyIntensity(meshFace.color,intensity);
+
         triangle_t projectedTriangle = {
             .points = {
                 {projectedPoints[0].x, projectedPoints[0].y},
                 {projectedPoints[1].x, projectedPoints[1].y},
                 {projectedPoints[2].x, projectedPoints[2].y},
             },
-            .color = meshFace.color,
+            .color = shadedColor,
             .avgDepth = avgDepth
         };
 
@@ -274,7 +288,7 @@ void render(void) {
         }
         if (renderMode == RENDER_WIRE || renderMode == RENDER_WIRE_VERTEX || renderMode == RENDER_FILL_TRIANGLE_WIRE) {
             //Unfilled Triangles for wireframe view
-            for (int i = 0; i < numOfTriangles; i++) {
+
                 triangle_t triangle = trianglesToRender[i];
                 drawTriangle(
                     triangle.points[0].x, triangle.points[0].y,
@@ -282,7 +296,7 @@ void render(void) {
                     triangle.points[2].x, triangle.points[2].y,
                     0xFF6A0DAD
                 );
-            }
+
         }
 
         if (renderMode == RENDER_WIRE_VERTEX) {

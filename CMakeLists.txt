@@ -23,6 +23,8 @@ add_executable(renderingInC src/main.c
         src/array.c
         src/matrix.h
         src/matrix.c
+        src/light.c
+        src/light.h
 )
 
 
