@@ -78,7 +78,7 @@ void loadObjFileData (char* fileName) {
         if (buffer[0] == 'f') {
             int v1, vt1, vn1, v2, vt2, vn2, v3, vt3, vn3;
             sscanf(buffer, "f %d/%d/%d %d/%d/%d %d/%d/%d",&v1, &vt1, &vn1, &v2, &vt2, &vn2, &v3, &vt3, &vn3);
-            face_t meshFace = {.a = v1, .b= v2, .c=v3};
+            face_t meshFace = {.a = v1, .b= v2, .c=v3, .color = 0xFFFFFFFF};
             array_push(mesh.faces,meshFace);
 
         }
