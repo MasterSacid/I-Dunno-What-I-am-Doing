@@ -83,8 +83,8 @@ void setup(void) {
     vec3Normalize(&sunRaysDir);
     light.direction = vec3Multiply(sunRaysDir,-1.0f);
 
-    //loadCubeMeshData();
-    loadObjFileData("../assets/Car 01/Car.obj");
+    loadCubeMeshData();
+    //loadObjFileData("../assets/Car 01/Car.obj");
 }
 
 void processInput(void) {
@@ -227,6 +227,9 @@ void update(void) {
             //Scale them
             projectedPoints[j].x *=(windowWidth/2.0);
             projectedPoints[j].y *=(windowHeight/2.0);
+
+            projectedPoints[j].y *= -1;
+
 
             //After projecting them (And scaling them) move  them to the middle of the screen
             projectedPoints[j].x += (windowWidth / 2.0);
