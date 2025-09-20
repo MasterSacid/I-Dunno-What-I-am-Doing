@@ -3,7 +3,12 @@
 #include "swap.h"
 
 
-
+static inline float clampf(float x, float lo, float hi) {
+    return x < lo ? lo : (x > hi ? hi : x);
+}
+static inline int clampi(int x, int lo, int hi) {
+    return x < lo ? lo : (x > hi ? hi : x);
+}
 
 
 void fillFlatBottomTriangle(int x0,int y0,int x1,int y1,int x2,int y2, uint32_t color) {
@@ -144,11 +149,18 @@ void drawTexel(
         interpolatedU /= interpolatedReciprocalW;
         interpolatedV /= interpolatedReciprocalW;
 
-        //Map the UV coordinate to the full texture width and height
-        int texX = abs((int)(interpolatedU * textureWidth));
-        int texY = abs((int)((1.0 - interpolatedV) * textureHeight));
+        float u = clampf(interpolatedU, 0.0f, 1.0f - 1e-7f);
+        float v = clampf(interpolatedV, 0.0f, 1.0f - 1e-7f);
 
-        drawPixel(x,y,texture[(textureWidth * texY) + texX]);
+
+        int texX = (int)floorf(u * (float)textureWidth);
+        int texY = (int)floorf((1.0f - v) * (float)textureHeight);
+
+
+        texX = clampi(texX, 0, textureWidth  - 1);
+        texY = clampi(texY, 0, textureHeight - 1);
+
+        drawPixel(x, y, texture[textureWidth * texY + texX]);
 
 
 }
