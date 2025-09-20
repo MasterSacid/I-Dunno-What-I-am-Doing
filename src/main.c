@@ -6,6 +6,7 @@
 #include "display.h"
 #include "vector.h"
 #include "mesh.h"
+#include "triangle.h"
 #include "array.h"
 #include "matrix.h"
 #include "light.h"
@@ -83,6 +84,13 @@ void setup(void) {
     vec3Normalize(&sunRaysDir);
     light.direction = vec3Multiply(sunRaysDir,-1.0f);
 
+
+    //Manually load the hardcoded texture data from the static array
+    meshTexture = (uint32_t*) REDBRICK_TEXTURE;
+    textureWidth = 64;
+    textureHeight = 64;
+
+    //Load the OBJ FIle
     loadCubeMeshData();
     //loadObjFileData("../assets/Car 01/Car.obj");
 }
@@ -106,6 +114,10 @@ void processInput(void) {
                 renderMode = RENDER_FILL_TRIANGLE;
             if (event.key.keysym.sym == SDLK_4)
                 renderMode = RENDER_FILL_TRIANGLE_WIRE;
+            if (event.key.keysym.sym == SDLK_5)
+                renderMode = RENDER_TEXTURED;
+            if (event.key.keysym.sym == SDLK_6)
+                renderMode = RENDER_TEXTURED_WIRE;
             if (event.key.keysym.sym == SDLK_c)
                 cullMode = CULL_BACKFACE;
             if (event.key.keysym.sym == SDLK_d)
@@ -134,7 +146,7 @@ void update(void) {
     //Change the mesh scale, rotation, translation....  every frame
 
     //mesh.rotation.x += 0.01;
-    mesh.rotation.y += 0.01;
+    //mesh.rotation.y += 0.01;
     //mesh.rotation.z += 0.01;
 
 
@@ -143,7 +155,7 @@ void update(void) {
 
 
     //mesh.translation.x += 0.01;
-    mesh.translation.z= 6.00;
+    mesh.translation.z= 5.00;
 
 
 
@@ -255,6 +267,11 @@ void update(void) {
                 {projectedPoints[1].x, projectedPoints[1].y},
                 {projectedPoints[2].x, projectedPoints[2].y},
             },
+            .texCoords = {
+                {meshFace.aUv.u,meshFace.aUv.v},
+                {meshFace.bUv.u,meshFace.bUv.v},
+                {meshFace.cUv.u,meshFace.cUv.v}
+            },
             .color = shadedColor,
             .avgDepth = avgDepth
         };
@@ -263,7 +280,7 @@ void update(void) {
         array_push(trianglesToRender, projectedTriangle);
     }
 
-    //Sorting the faces and using painters algorithm to determine the order
+    //Sorting the faces and using painters algorithm to determine the rendering order
     int numTrianglesToSort = array_length(trianglesToRender);
     qsort(trianglesToRender, numTrianglesToSort, sizeof(triangle_t), compareFaceDepth);
 }
@@ -289,9 +306,22 @@ void render(void) {
                 triangle.color
             );
         }
-        if (renderMode == RENDER_WIRE || renderMode == RENDER_WIRE_VERTEX || renderMode == RENDER_FILL_TRIANGLE_WIRE) {
-            //Unfilled Triangles for wireframe view
 
+        //Textured Triangle
+        if (renderMode == RENDER_TEXTURED || renderMode == RENDER_TEXTURED_WIRE) {
+
+            drawTexturedTriangle(
+               triangle.points[0].x, triangle.points[0].y, triangle.texCoords[0].u, triangle.texCoords[0].v, //Vertex A
+               triangle.points[1].x, triangle.points[1].y, triangle.texCoords[1].u, triangle.texCoords[1].v, //Vertex B
+               triangle.points[2].x, triangle.points[2].y, triangle.texCoords[2].u, triangle.texCoords[2].v, //Vertex C
+               meshTexture
+
+           );
+
+        }
+
+        //Unfilled Triangles for wireframe view
+        if (renderMode == RENDER_WIRE || renderMode == RENDER_WIRE_VERTEX || renderMode == RENDER_FILL_TRIANGLE_WIRE || renderMode == RENDER_TEXTURED_WIRE) {
                 triangle_t triangle = trianglesToRender[i];
                 drawTriangle(
                     triangle.points[0].x, triangle.points[0].y,

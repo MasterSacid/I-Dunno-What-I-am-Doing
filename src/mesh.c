@@ -26,29 +26,25 @@ vec3_t cubeVertices[N_CUBE_VERTICES] = {
 
 face_t cubeFaces[N_CUBE_FACES] = {
     // front
-    {.a = 1, .b = 2, .c = 3,.color = 0xFFE6B0FF},
-    {.a = 1, .b = 3, .c = 4,.color = 0xFFE6B0FF},
-
+    { .a = 1, .b = 2, .c = 3, .aUv = { 0, 0 }, .bUv = { 0, 1 }, .cUv = { 1, 1 }, .color = 0xFFFFFFFF },
+    { .a = 1, .b = 3, .c = 4, .aUv = { 0, 0 }, .bUv = { 1, 1 }, .cUv = { 1, 0 }, .color = 0xFFFFFFFF },
     // right
-    {.a = 4, .b = 3, .c = 5,.color = 0xFFFF7F11},
-    {.a = 4, .b = 5, .c = 6,.color = 0xFFFF7F11},
-
+    { .a = 4, .b = 3, .c = 5, .aUv = { 0, 0 }, .bUv = { 0, 1 }, .cUv = { 1, 1 }, .color = 0xFFFFFFFF },
+    { .a = 4, .b = 5, .c = 6, .aUv = { 0, 0 }, .bUv = { 1, 1 }, .cUv = { 1, 0 }, .color = 0xFFFFFFFF },
     // back
-    {.a = 6, .b = 5, .c = 7,.color = 0xFF11C5FF},
-    {.a = 6, .b = 7, .c = 8,.color = 0xFF11C5FF},
-
+    { .a = 6, .b = 5, .c = 7, .aUv = { 0, 0 }, .bUv = { 0, 1 }, .cUv = { 1, 1 }, .color = 0xFFFFFFFF },
+    { .a = 6, .b = 7, .c = 8, .aUv = { 0, 0 }, .bUv = { 1, 1 }, .cUv = { 1, 0 }, .color = 0xFFFFFFFF },
     // left
-    {.a = 8, .b = 7, .c = 2,.color = 0xFF32CD32},
-    {.a = 8, .b = 2, .c = 1,.color = 0xFF32CD32},
-
+    { .a = 8, .b = 7, .c = 2, .aUv = { 0, 0 }, .bUv = { 0, 1 }, .cUv = { 1, 1 }, .color = 0xFFFFFFFF },
+    { .a = 8, .b = 2, .c = 1, .aUv = { 0, 0 }, .bUv = { 1, 1 }, .cUv = { 1, 0 }, .color = 0xFFFFFFFF },
     // top
-    {.a = 2, .b = 7, .c = 5,.color = 0xFF3A3A3A},
-    {.a = 2, .b = 5, .c = 3,.color = 0xFF3A3A3A},
-
+    { .a = 2, .b = 7, .c = 5, .aUv = { 0, 0 }, .bUv = { 0, 1 }, .cUv = { 1, 1 }, .color = 0xFFFFFFFF },
+    { .a = 2, .b = 5, .c = 3, .aUv = { 0, 0 }, .bUv = { 1, 1 }, .cUv = { 1, 0 }, .color = 0xFFFFFFFF },
     // bottom
-    {.a = 6, .b = 8, .c = 1,.color = 0xFF8B0000},
-    {.a = 6, .b = 1, .c = 4,.color = 0xFF8B0000}
+    { .a = 6, .b = 8, .c = 1, .aUv = { 0, 0 }, .bUv = { 0, 1 }, .cUv = { 1, 1 }, .color = 0xFFFFFFFF },
+    { .a = 6, .b = 1, .c = 4, .aUv = { 0, 0 }, .bUv = { 1, 1 }, .cUv = { 1, 0 }, .color = 0xFFFFFFFF }
 };
+
 
 void loadCubeMeshData(void) {
     for (int i = 0; i< N_CUBE_VERTICES; i ++) {
