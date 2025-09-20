@@ -145,9 +145,9 @@ void update(void) {
 
     //Change the mesh scale, rotation, translation....  every frame
 
-    //mesh.rotation.x += 0.01;
-    //mesh.rotation.y += 0.01;
-    //mesh.rotation.z += 0.01;
+    mesh.rotation.x += 0.01;
+    mesh.rotation.y += 0.01;
+    mesh.rotation.z += 0.01;
 
 
     //mesh.scale.x += 0.002;
@@ -263,9 +263,9 @@ void update(void) {
 
         triangle_t projectedTriangle = {
             .points = {
-                {projectedPoints[0].x, projectedPoints[0].y},
-                {projectedPoints[1].x, projectedPoints[1].y},
-                {projectedPoints[2].x, projectedPoints[2].y},
+                {projectedPoints[0].x, projectedPoints[0].y,projectedPoints[0].z,projectedPoints[0].w},
+                {projectedPoints[1].x, projectedPoints[1].y,projectedPoints[1].z,projectedPoints[1].w},
+                {projectedPoints[2].x, projectedPoints[2].y,projectedPoints[2].z,projectedPoints[2].w},
             },
             .texCoords = {
                 {meshFace.aUv.u,meshFace.aUv.v},
@@ -311,9 +311,9 @@ void render(void) {
         if (renderMode == RENDER_TEXTURED || renderMode == RENDER_TEXTURED_WIRE) {
 
             drawTexturedTriangle(
-               triangle.points[0].x, triangle.points[0].y, triangle.texCoords[0].u, triangle.texCoords[0].v, //Vertex A
-               triangle.points[1].x, triangle.points[1].y, triangle.texCoords[1].u, triangle.texCoords[1].v, //Vertex B
-               triangle.points[2].x, triangle.points[2].y, triangle.texCoords[2].u, triangle.texCoords[2].v, //Vertex C
+               triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w,triangle.texCoords[0].u, triangle.texCoords[0].v, //Vertex A
+               triangle.points[1].x, triangle.points[1].y, triangle.points[1].z, triangle.points[1].w,triangle.texCoords[1].u, triangle.texCoords[1].v, //Vertex B
+               triangle.points[2].x, triangle.points[2].y, triangle.points[2].z, triangle.points[2].w,triangle.texCoords[2].u, triangle.texCoords[2].v, //Vertex C
                meshTexture
 
            );

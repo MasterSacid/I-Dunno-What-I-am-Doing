@@ -112,20 +112,37 @@ vec3_t barycentricWeights(vec2_t a, vec2_t b, vec2_t c, vec2_t p) {
 //Function to draw textured pixel at x and y position
 void drawTexel(
     int x, int y, uint32_t* texture,
-    vec2_t pointA, vec2_t pointB,vec2_t pointC,
-    float u0, float v0, float u1, float v1, float u2, float v2
+    vec4_t pointA, vec4_t pointB, vec4_t pointC,
+    tex2_t aUv,  tex2_t bUv, tex2_t cUv
     ) {
-        vec2_t pointP = {x,y};
+        vec2_t p = {x,y};
+        vec2_t a = vec4ToVec2(pointA);
+        vec2_t b = vec4ToVec2(pointB);
+        vec2_t c = vec4ToVec2(pointC);
 
-        vec3_t weights = barycentricWeights(pointA,pointB,pointC,pointP);
+
+        vec3_t weights = barycentricWeights(a,b,c,p);
 
         float alpha = weights.x;
         float beta = weights.y;
         float gamma = weights.z;
 
-        //Perform the interpolation of all U and V values using barycentric weights
-        float interpolatedU = u0 * alpha + u1 * beta + u2 * gamma;
-        float interpolatedV = v0 * alpha + v1 * beta + v2 * gamma;
+        //Variables to store the interpolated values of U, V and 1/W for texel
+        float interpolatedU;
+        float interpolatedV;
+        float interpolatedReciprocalW;
+
+
+        //Perform the interpolation of all U/W and V/W values using barycentric weights and factor of 1/W
+        interpolatedU = (aUv.u/pointA.w) * alpha + (bUv.u/pointB.w) * beta + (cUv.u/pointC.w) * gamma;
+        interpolatedV = (aUv.v/pointA.w) * alpha + (bUv.v/pointB.w) * beta + (cUv.v/pointC.w) * gamma;
+
+        //Interpolate the value of 1/w for the current texel
+        interpolatedReciprocalW =(1/pointA.w) * alpha + (1/pointB.w) * beta + (1/pointC.w) * gamma;
+
+        //We divide back both interpolations by 1/w
+        interpolatedU /= interpolatedReciprocalW;
+        interpolatedV /= interpolatedReciprocalW;
 
         //Map the UV coordinate to the full texture width and height
         int texX = abs((int)(interpolatedU * textureWidth));
@@ -139,34 +156,44 @@ void drawTexel(
 
 
 void drawTexturedTriangle (
-    int x0, int y0, float u0, float v0,
-    int x1, int y1, float u1, float v1,
-    int x2, int y2, float u2, float v2,
+    int x0, int y0, float z0, float w0, float u0, float v0,
+    int x1, int y1, float z1, float w1, float u1, float v1,
+    int x2, int y2, float z2, float w2, float u2, float v2,
     uint32_t* texture
     ) {
     //Sort it by ascending order (y0 < y1 <y2)
     if (y0 > y1) {
         intSwap(&y0,&y1);
         intSwap(&x0,&x1);
+        floatSwap(&z0,&z1);
+        floatSwap(&w0,&w1);
         floatSwap(&u0,&u1);
         floatSwap(&v0,&v1);
     }
     if (y1 > y2) {
         intSwap(&y1,&y2);
         intSwap(&x1,&x2);
+        floatSwap(&z1,&z2);
+        floatSwap(&w1,&w2);
         floatSwap(&u1,&u2);
         floatSwap(&v1,&v2);
     }
     if (y0 > y1) {
         intSwap(&y0,&y1);
         intSwap(&x0,&x1);
+        floatSwap(&z0,&z1);
+        floatSwap(&w0,&w1);
         floatSwap(&u0,&u1);
         floatSwap(&v0,&v1);
     }
-    //Create vector points after we sort the vertices
-    vec2_t pointA = {x0,y0};
-    vec2_t pointB = {x1,y1};
-    vec2_t pointC = {x2,y2};
+    //Create vector points and texture coords after we sort the vertices
+    vec4_t pointA = {x0,y0,z0,w0};
+    vec4_t pointB = {x1,y1,z1,w1};
+    vec4_t pointC = {x2,y2,z2,w2};
+    tex2_t aUv = {u0,v0};
+    tex2_t bUv = {u1,v1};
+    tex2_t cUv = {u2,v2};
+
 
 
     //++++++++++==================++++++++++
@@ -193,7 +220,7 @@ void drawTexturedTriangle (
             for (int x = xStart; x<xEnd;x++) {
 
                 //drawPixel(x,y,0xFFFF00FF);
-                drawTexel(x,y,texture,pointA,pointB,pointC,u0,v0,u1,v1,u2,v2);
+                drawTexel(x,y,texture,pointA,pointB,pointC,aUv,bUv,cUv);
 
             }
         }
@@ -224,8 +251,7 @@ void drawTexturedTriangle (
             for (int x = xStart; x<xEnd;x++) {
 
                 //drawPixel(x,y,0xFFFF00FF);
-                drawTexel(x,y,texture,pointA,pointB,pointC,u0,v0,u1,v1,u2,v2);
-
+                drawTexel(x,y,texture,pointA,pointB,pointC,aUv,bUv,cUv);
             }
         }
     }
