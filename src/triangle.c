@@ -125,11 +125,11 @@ void drawTexel(
 
         //Perform the interpolation of all U and V values using barycentric weights
         float interpolatedU = u0 * alpha + u1 * beta + u2 * gamma;
-        float interpolatedV = v0 * alpha + v2 * beta + v2 * gamma;
+        float interpolatedV = v0 * alpha + v1 * beta + v2 * gamma;
 
         //Map the UV coordinate to the full texture width and height
         int texX = abs((int)(interpolatedU * textureWidth));
-        int texY = abs((int)(interpolatedV * textureHeight));
+        int texY = abs((int)((1.0 - interpolatedV) * textureHeight));
 
         drawPixel(x,y,texture[(textureWidth * texY) + texX]);
 
