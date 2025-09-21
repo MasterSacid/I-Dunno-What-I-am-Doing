@@ -87,10 +87,6 @@ void setup(void) {
     light.direction = vec3Multiply(sunRaysDir,-1.0f);
 
 
-    //Manually load the hardcoded texture data from the static array
-    //meshTexture = (uint32_t*) REDBRICK_TEXTURE;
-    //textureWidth = 64;
-    //textureHeight = 64;
 
     //Load the OBJ FIle
     //loadCubeMeshData();
@@ -160,7 +156,7 @@ void update(void) {
 
 
     //mesh.translation.x += 0.01;
-    mesh.translation.z= 6.00;
+    mesh.translation.z= 10.00;
 
 
 
