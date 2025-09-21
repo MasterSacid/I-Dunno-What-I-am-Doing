@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
+#include "upng.h"
 #include "display.h"
 #include "vector.h"
 #include "mesh.h"
@@ -10,6 +11,7 @@
 #include "array.h"
 #include "matrix.h"
 #include "light.h"
+
 
 
 void setup(void);
@@ -67,7 +69,7 @@ void setup(void) {
     //Creating a SDL texture that is used to display the color buffer
     colorBufferTexture = SDL_CreateTexture(
         renderer,
-        SDL_PIXELFORMAT_ARGB8888,
+        SDL_PIXELFORMAT_RGBA32,
         SDL_TEXTUREACCESS_STREAMING,
         windowWidth,
         windowHeight
@@ -86,13 +88,14 @@ void setup(void) {
 
 
     //Manually load the hardcoded texture data from the static array
-    meshTexture = (uint32_t*) REDBRICK_TEXTURE;
-    textureWidth = 64;
-    textureHeight = 64;
+    //meshTexture = (uint32_t*) REDBRICK_TEXTURE;
+    //textureWidth = 64;
+    //textureHeight = 64;
 
     //Load the OBJ FIle
     loadCubeMeshData();
     //loadObjFileData("../assets/Car 01/Car.obj");
+    loadPngTextureData("../assets/MamaHong.png");
 }
 
 void processInput(void) {
@@ -145,9 +148,9 @@ void update(void) {
 
     //Change the mesh scale, rotation, translation....  every frame
 
-    mesh.rotation.x += 0.01;
+    //mesh.rotation.x += 0.01;
     mesh.rotation.y += 0.01;
-    mesh.rotation.z += 0.01;
+    //mesh.rotation.z += 0.01;
 
 
     //mesh.scale.x += 0.002;
@@ -350,6 +353,7 @@ void render(void) {
 
 void freeResources(void) {
     free(colorBuffer);
+    upng_free(pngTexture);
     array_free(mesh.faces);
     array_free(mesh.vertices);
 }
