@@ -94,10 +94,10 @@ void setup(void) {
 
     //Load the OBJ FIle
     //loadCubeMeshData();
-    //loadObjFileData("../assets/Car 01/Car.obj");
-    //loadPngTextureData("../assets/Car 01/car.png");
-    loadObjFileData("../assets/cube.obj");
-    loadPngTextureData("../assets/MamaHong.png");
+    loadObjFileData("../assets/Car 01/Car.obj");
+    loadPngTextureData("../assets/Car 01/car.png");
+    //loadObjFileData("../assets/cube.obj");
+    //loadPngTextureData("../assets/MamaHong.png");
 }
 
 void processInput(void) {
