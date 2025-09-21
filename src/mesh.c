@@ -57,30 +57,65 @@ void loadCubeMeshData(void) {
     }
 }
 
-void loadObjFileData (char* fileName) {
-
+void loadObjFileData(char *fileName) {
     FILE *fp = fopen(fileName, "r");
-    char buffer[1000];
-
-
-
-    while (fgets(buffer, sizeof(buffer), fp)) {
-        if (buffer[0] == 'v') {
-            float x,y,z;
-            sscanf(buffer,"v %f %f %f",&x,&y,&z);
-            vec3_t meshVertex = {.x=x,.y=y,.z=z};
-            array_push(mesh.vertices,meshVertex);
-        }
-        if (buffer[0] == 'f') {
-            int v1, vt1, vn1, v2, vt2, vn2, v3, vt3, vn3;
-            sscanf(buffer, "f %d/%d/%d %d/%d/%d %d/%d/%d",&v1, &vt1, &vn1, &v2, &vt2, &vn2, &v3, &vt3, &vn3);
-            face_t meshFace = {.a = v1, .b= v2, .c=v3, .color = 0xFFFFFFFF};
-            array_push(mesh.faces,meshFace);
-
-        }
+    if (!fp) {
+        perror("fopen");
+        return;
     }
 
+    char buffer[1024];
+    tex2_t *texCoords = NULL; //Thats an array !
+
+    while (fgets(buffer, sizeof(buffer), fp)) {
+        // Skip leading whitespace
+        char *p = buffer;
+        while (*p && isspace((unsigned char)*p)) p++;
+
+        // Skip empty lines and comments
+        if (*p == '\0' || *p == '#') continue;
+
+
+        if (strncmp(p, "v ", 2) == 0) {
+            float x, y, z;
+            if (sscanf(p + 2, "%f %f %f", &x, &y, &z) == 3) {
+                vec3_t meshVertex = { .x = x, .y = y, .z = z };
+                array_push(mesh.vertices, meshVertex);
+            }
+            continue;
+        }
+
+        // Texture Coordinate Info: "vt u v"
+
+        if (strncmp(p, "vt ", 3) == 0) {
+            tex2_t texCoord;
+            sscanf(buffer,"vt %f %f", &texCoord.u,&texCoord.v);
+            array_push(texCoords,texCoord);
+
+            continue;
+        }
+
+        // Face Info: "f v1/vt1/vn1 v2/vt2/vn2 v3/vt3/vn3"
+        if (strncmp(p, "f ", 2) == 0) {
+            int v1, vt1, vn1, v2, vt2, vn2, v3, vt3, vn3;
+            if (sscanf(p + 2, "%d/%d/%d %d/%d/%d %d/%d/%d",
+                       &v1, &vt1, &vn1, &v2, &vt2, &vn2, &v3, &vt3, &vn3) == 9) {
+                face_t meshFace = {
+                    .a = v1 - 1,
+                    .b = v2 - 1,
+                    .c = v3 - 1,
+                    .aUv = texCoords[vt1 - 1],
+                    .bUv = texCoords[vt2 - 1],
+                    .cUv = texCoords[vt3 - 1],
+                    .color = 0xFFFFFFFF
+                };
+                array_push(mesh.faces, meshFace);
+                       }
+            continue;
+        }
+
+    }
+    array_free(texCoords);
+
     fclose(fp);
-
-
 }

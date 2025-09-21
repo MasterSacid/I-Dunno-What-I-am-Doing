@@ -93,8 +93,10 @@ void setup(void) {
     //textureHeight = 64;
 
     //Load the OBJ FIle
-    loadCubeMeshData();
+    //loadCubeMeshData();
     //loadObjFileData("../assets/Car 01/Car.obj");
+    //loadPngTextureData("../assets/Car 01/car.png");
+    loadObjFileData("../assets/cube.obj");
     loadPngTextureData("../assets/MamaHong.png");
 }
 
@@ -179,9 +181,9 @@ void update(void) {
     for (int i = 0; i < numFaces; i++) {
         face_t meshFace = mesh.faces[i];
         vec3_t faceVertices[3];
-        faceVertices[0] = mesh.vertices[meshFace.a - 1];
-        faceVertices[1] = mesh.vertices[meshFace.b - 1];
-        faceVertices[2] = mesh.vertices[meshFace.c - 1];
+        faceVertices[0] = mesh.vertices[meshFace.a];
+        faceVertices[1] = mesh.vertices[meshFace.b];
+        faceVertices[2] = mesh.vertices[meshFace.c];
 
 
         vec4_t transformedVertices[3];

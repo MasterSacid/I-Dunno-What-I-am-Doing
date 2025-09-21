@@ -6,7 +6,7 @@
 #include <SDL2/SDL.h>
 
 
-#define FPS 60
+#define FPS 160
 #define FRAME_TARGET_TIME (1000/FPS)
 
 enum cullMode {
