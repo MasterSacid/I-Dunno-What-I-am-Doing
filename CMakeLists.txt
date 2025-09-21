@@ -25,6 +25,12 @@ add_executable(renderingInC src/main.c
         src/matrix.c
         src/light.c
         src/light.h
+        src/texture.c
+        src/texture.h
+        src/swap.c
+        src/swap.h
+        src/upng.c
+        src/upng.h
 )
 
 

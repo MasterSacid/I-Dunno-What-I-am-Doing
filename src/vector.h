@@ -42,6 +42,7 @@ vec3_t rotateAroundZ(vec3_t v , float angle);
 //Conversion Functions
 vec4_t vec3ToVec4(vec3_t v);
 vec3_t vec4ToVec3 (vec4_t v);
+vec2_t vec4ToVec2(vec4_t v);
 
 
 

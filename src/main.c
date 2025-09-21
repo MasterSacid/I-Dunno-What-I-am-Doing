@@ -3,12 +3,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
+#include "upng.h"
 #include "display.h"
 #include "vector.h"
 #include "mesh.h"
+#include "triangle.h"
 #include "array.h"
 #include "matrix.h"
 #include "light.h"
+
 
 
 void setup(void);
@@ -66,7 +69,7 @@ void setup(void) {
     //Creating a SDL texture that is used to display the color buffer
     colorBufferTexture = SDL_CreateTexture(
         renderer,
-        SDL_PIXELFORMAT_ARGB8888,
+        SDL_PIXELFORMAT_RGBA32,
         SDL_TEXTUREACCESS_STREAMING,
         windowWidth,
         windowHeight
@@ -83,8 +86,14 @@ void setup(void) {
     vec3Normalize(&sunRaysDir);
     light.direction = vec3Multiply(sunRaysDir,-1.0f);
 
-    loadCubeMeshData();
-    //loadObjFileData("../assets/Car 01/Car.obj");
+
+
+    //Load the OBJ FIle
+    //loadCubeMeshData();
+    loadObjFileData("../assets/Car 01/Car.obj");
+    loadPngTextureData("../assets/Car 01/car.png");
+    //loadObjFileData("../assets/cube.obj");
+    //loadPngTextureData("../assets/MamaHong.png");
 }
 
 void processInput(void) {
@@ -106,6 +115,10 @@ void processInput(void) {
                 renderMode = RENDER_FILL_TRIANGLE;
             if (event.key.keysym.sym == SDLK_4)
                 renderMode = RENDER_FILL_TRIANGLE_WIRE;
+            if (event.key.keysym.sym == SDLK_5)
+                renderMode = RENDER_TEXTURED;
+            if (event.key.keysym.sym == SDLK_6)
+                renderMode = RENDER_TEXTURED_WIRE;
             if (event.key.keysym.sym == SDLK_c)
                 cullMode = CULL_BACKFACE;
             if (event.key.keysym.sym == SDLK_d)
@@ -143,7 +156,7 @@ void update(void) {
 
 
     //mesh.translation.x += 0.01;
-    mesh.translation.z= 6.00;
+    mesh.translation.z= 10.00;
 
 
 
@@ -164,9 +177,9 @@ void update(void) {
     for (int i = 0; i < numFaces; i++) {
         face_t meshFace = mesh.faces[i];
         vec3_t faceVertices[3];
-        faceVertices[0] = mesh.vertices[meshFace.a - 1];
-        faceVertices[1] = mesh.vertices[meshFace.b - 1];
-        faceVertices[2] = mesh.vertices[meshFace.c - 1];
+        faceVertices[0] = mesh.vertices[meshFace.a];
+        faceVertices[1] = mesh.vertices[meshFace.b];
+        faceVertices[2] = mesh.vertices[meshFace.c];
 
 
         vec4_t transformedVertices[3];
@@ -251,9 +264,14 @@ void update(void) {
 
         triangle_t projectedTriangle = {
             .points = {
-                {projectedPoints[0].x, projectedPoints[0].y},
-                {projectedPoints[1].x, projectedPoints[1].y},
-                {projectedPoints[2].x, projectedPoints[2].y},
+                {projectedPoints[0].x, projectedPoints[0].y,projectedPoints[0].z,projectedPoints[0].w},
+                {projectedPoints[1].x, projectedPoints[1].y,projectedPoints[1].z,projectedPoints[1].w},
+                {projectedPoints[2].x, projectedPoints[2].y,projectedPoints[2].z,projectedPoints[2].w},
+            },
+            .texCoords = {
+                {meshFace.aUv.u,meshFace.aUv.v},
+                {meshFace.bUv.u,meshFace.bUv.v},
+                {meshFace.cUv.u,meshFace.cUv.v}
             },
             .color = shadedColor,
             .avgDepth = avgDepth
@@ -263,7 +281,7 @@ void update(void) {
         array_push(trianglesToRender, projectedTriangle);
     }
 
-    //Sorting the faces and using painters algorithm to determine the order
+    //Sorting the faces and using painters algorithm to determine the rendering order
     int numTrianglesToSort = array_length(trianglesToRender);
     qsort(trianglesToRender, numTrianglesToSort, sizeof(triangle_t), compareFaceDepth);
 }
@@ -289,9 +307,22 @@ void render(void) {
                 triangle.color
             );
         }
-        if (renderMode == RENDER_WIRE || renderMode == RENDER_WIRE_VERTEX || renderMode == RENDER_FILL_TRIANGLE_WIRE) {
-            //Unfilled Triangles for wireframe view
 
+        //Textured Triangle
+        if (renderMode == RENDER_TEXTURED || renderMode == RENDER_TEXTURED_WIRE) {
+
+            drawTexturedTriangle(
+               triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w,triangle.texCoords[0].u, triangle.texCoords[0].v, //Vertex A
+               triangle.points[1].x, triangle.points[1].y, triangle.points[1].z, triangle.points[1].w,triangle.texCoords[1].u, triangle.texCoords[1].v, //Vertex B
+               triangle.points[2].x, triangle.points[2].y, triangle.points[2].z, triangle.points[2].w,triangle.texCoords[2].u, triangle.texCoords[2].v, //Vertex C
+               meshTexture
+
+           );
+
+        }
+
+        //Unfilled Triangles for wireframe view
+        if (renderMode == RENDER_WIRE || renderMode == RENDER_WIRE_VERTEX || renderMode == RENDER_FILL_TRIANGLE_WIRE || renderMode == RENDER_TEXTURED_WIRE) {
                 triangle_t triangle = trianglesToRender[i];
                 drawTriangle(
                     triangle.points[0].x, triangle.points[0].y,
@@ -320,6 +351,7 @@ void render(void) {
 
 void freeResources(void) {
     free(colorBuffer);
+    upng_free(pngTexture);
     array_free(mesh.faces);
     array_free(mesh.vertices);
 }

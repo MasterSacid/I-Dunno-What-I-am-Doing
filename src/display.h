@@ -6,7 +6,7 @@
 #include <SDL2/SDL.h>
 
 
-#define FPS 60
+#define FPS 160
 #define FRAME_TARGET_TIME (1000/FPS)
 
 enum cullMode {
@@ -18,7 +18,9 @@ enum renderMode {
     RENDER_WIRE,
     RENDER_WIRE_VERTEX,
     RENDER_FILL_TRIANGLE,
-    RENDER_FILL_TRIANGLE_WIRE
+    RENDER_FILL_TRIANGLE_WIRE,
+    RENDER_TEXTURED,
+    RENDER_TEXTURED_WIRE
 } renderMode;
 
 extern SDL_Window* window;
