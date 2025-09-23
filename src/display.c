@@ -6,6 +6,7 @@ SDL_Renderer* renderer = NULL;
 
 SDL_Texture* colorBufferTexture = NULL;
 uint32_t* colorBuffer = NULL;
+float* zBuffer = NULL;
 
 int windowWidth = 800;
 int windowHeight = 600;
@@ -79,6 +80,18 @@ void clearColorBuffer(uint32_t color) {
     }
 
 }
+
+void clearZBuffer(void) {
+    for (int y =0 ;y < windowHeight ;y++) {
+        for (int x =0 ;x < windowWidth ;x++) {
+            zBuffer[(windowWidth * y) + x] = 1.0;
+        }
+    }
+
+}
+
+
+
 
 void renderColorBuffer(void) {
     SDL_UpdateTexture(

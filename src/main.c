@@ -25,17 +25,22 @@ void render(void);
 
 void freeResources(void);
 
-int compareFaceDepth(const void *a, const void *b);
+#define MAX_TRIANGLES_PER_MESH 10000
+
 
 
 bool isRunning = false;
+
 
 vec3_t cameraPosition = {0, 0, 0};
 
 mat4_t projMatrix;
 uint32_t previousFrameTime = 0;
 
-triangle_t *trianglesToRender = NULL;
+triangle_t trianglesToRender[MAX_TRIANGLES_PER_MESH];
+
+int numTrianglesToRender = 0;
+
 light_t light = {.position={0,0,5}};
 
 
@@ -63,8 +68,9 @@ void setup(void) {
     renderMode = RENDER_WIRE;
     cullMode = CULL_BACKFACE;
 
-    //Allocate the required memory to hold the color buffer
-    colorBuffer = (uint32_t *) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
+    //Allocate the required memory to hold the color  and zbuffers
+    colorBuffer = (uint32_t*)malloc(sizeof(uint32_t) * windowWidth * windowHeight);
+    zBuffer = (float*)malloc(sizeof(float)*windowWidth*windowHeight);
 
     //Creating a SDL texture that is used to display the color buffer
     colorBufferTexture = SDL_CreateTexture(
@@ -141,8 +147,8 @@ void update(void) {
     }
     previousFrameTime = SDL_GetTicks();
 
-    //Initialize the array of triangles
-    trianglesToRender = NULL;
+    //Initialize the counter of triangles for the current frame
+    numTrianglesToRender = 0;
 
     //Change the mesh scale, rotation, translation....  every frame
 
@@ -251,8 +257,7 @@ void update(void) {
 
         }
 
-        //Calculate the average depth for each face based on the vertices after transformation
-        float avgDepth = (transformedVertices[0].z + transformedVertices[1].z + transformedVertices[2].z) / 3.0;
+
 
 
         //Light       Shading
@@ -274,36 +279,40 @@ void update(void) {
                 {meshFace.cUv.u,meshFace.cUv.v}
             },
             .color = shadedColor,
-            .avgDepth = avgDepth
+
         };
 
+        if (numTrianglesToRender <  MAX_TRIANGLES_PER_MESH) {
+            trianglesToRender[numTrianglesToRender] = projectedTriangle;
+            numTrianglesToRender ++;
+        }
         // Lastly save the projected triangle in the array of triangles to render
-        array_push(trianglesToRender, projectedTriangle);
+
+
     }
 
-    //Sorting the faces and using painters algorithm to determine the rendering order
-    int numTrianglesToSort = array_length(trianglesToRender);
-    qsort(trianglesToRender, numTrianglesToSort, sizeof(triangle_t), compareFaceDepth);
+
 }
 
 
 void render(void) {
-    clearColorBuffer(0xFF000000);
+
+
 
 
     //drawGrid();
 
 
-    int numOfTriangles = array_length(trianglesToRender);
-    for (int i = 0; i < numOfTriangles; i++) {
+
+    for (int i = 0; i < numTrianglesToRender; i++) {
         triangle_t triangle = trianglesToRender[i];
 
         //Filled Triangle
         if (renderMode == RENDER_FILL_TRIANGLE || renderMode == RENDER_FILL_TRIANGLE_WIRE) {
             drawFilledTriangle(
-                triangle.points[0].x, triangle.points[0].y,
-                triangle.points[1].x, triangle.points[1].y,
-                triangle.points[2].x, triangle.points[2].y,
+                triangle.points[0].x, triangle.points[0].y,triangle.points[0].z,triangle.points[0].w,
+                triangle.points[1].x, triangle.points[1].y,triangle.points[1].z,triangle.points[1].w,
+                triangle.points[2].x, triangle.points[2].y,triangle.points[2].z,triangle.points[2].w,
                 triangle.color
             );
         }
@@ -341,29 +350,19 @@ void render(void) {
     }
 
 
-    //FREE THE ARRAY FIRST!!!!!!!!!!!!!!!!
-    array_free(trianglesToRender);
+
     //Its ready to be rendered now
     renderColorBuffer();
-
+    clearColorBuffer(0xFF000000);
+    clearZBuffer();
     SDL_RenderPresent(renderer);
 }
 
 void freeResources(void) {
     free(colorBuffer);
+    free(zBuffer);
     upng_free(pngTexture);
     array_free(mesh.faces);
     array_free(mesh.vertices);
 }
 
-int compareFaceDepth(const void *a, const void *b) {
-    const triangle_t *triangleA = (const triangle_t *) a;
-    const triangle_t *triangleB = (const triangle_t *) b;
-
-    if (triangleA->avgDepth > triangleB->avgDepth) {
-        return -1; // triangleA comes before triangleB
-    } else if (triangleA->avgDepth < triangleB->avgDepth) {
-        return 1; // triangleB comes before triangleA
-    }
-    return 0; // Equal depth
-}

@@ -6,7 +6,7 @@
 #include <SDL2/SDL.h>
 
 
-#define FPS 160
+#define FPS 120
 #define FRAME_TARGET_TIME (1000/FPS)
 
 enum cullMode {
@@ -28,6 +28,7 @@ extern SDL_Renderer* renderer;
 
 extern SDL_Texture* colorBufferTexture;
 extern uint32_t* colorBuffer;
+extern float* zBuffer;
 
 extern int windowWidth;
 extern int windowHeight;
@@ -39,6 +40,7 @@ void drawRect(int x , int y, int width , int height , uint32_t color);
 void drawPixel(int x, int y, uint32_t color);
 void destroyWindow(void);
 void clearColorBuffer(uint32_t color);
+void clearZBuffer(void);
 void renderColorBuffer(void);
 void drawLine(int x0, int y0, int x1, int y1, uint32_t color);
 void drawTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color);
