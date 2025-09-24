@@ -1,7 +1,7 @@
 # Blender 4.5.2 LTS MTL File: 'None'
 # www.blender.org
 
-newmtl car_mat
+newmtl car_mat.001
 Ns 10.000005
 Ka 1.000000 1.000000 1.000000
 Ks 0.000000 0.000000 0.000000

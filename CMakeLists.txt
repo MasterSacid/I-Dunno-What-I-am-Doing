@@ -31,6 +31,8 @@ add_executable(renderingInC src/main.c
         src/swap.h
         src/upng.c
         src/upng.h
+        src/camera.c
+        src/camera.h
 )
 
 

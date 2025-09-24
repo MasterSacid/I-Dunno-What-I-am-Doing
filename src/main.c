@@ -11,6 +11,7 @@
 #include "array.h"
 #include "matrix.h"
 #include "light.h"
+#include "camera.h"
 
 
 
@@ -32,9 +33,12 @@ void freeResources(void);
 bool isRunning = false;
 
 
-vec3_t cameraPosition = {0, 0, 0};
+
 
 mat4_t projMatrix;
+mat4_t viewMatrix;
+mat4_t worldMatrix;
+
 uint32_t previousFrameTime = 0;
 
 triangle_t trianglesToRender[MAX_TRIANGLES_PER_MESH];
@@ -96,8 +100,10 @@ void setup(void) {
 
     //Load the OBJ FIle
     //loadCubeMeshData();
+
     loadObjFileData("../assets/Car 01/Car.obj");
     loadPngTextureData("../assets/Car 01/car.png");
+
     //loadObjFileData("../assets/cube.obj");
     //loadPngTextureData("../assets/MamaHong.png");
 }
@@ -164,7 +170,15 @@ void update(void) {
     //mesh.translation.x += 0.01;
     mesh.translation.z= 10.00;
 
+    //Change the camera position frame by frame
+    camera.position.x+=0.01;
+    camera.position.y+=0.01;
 
+
+    vec3_t target = {0,0,10.0};
+    vec3_t upDirection = {0,1,0};
+    //Create a view matrix for camera looking at a hardcoded target point
+    viewMatrix = mat4LookAt(camera.position,target,upDirection);
 
     //Create a scale matrix that will be used to multiply the mesh vertices
     mat4_t scaleMatrix = mat4MakeScale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
@@ -194,8 +208,10 @@ void update(void) {
         for (int j = 0; j < 3; j++) {
             vec4_t transformedVertex = vec3ToVec4(faceVertices[j]);
 
+
+
             //Create  a world matrix combining scale, rotation and translation (The order matters a lott!!!!)
-            mat4_t worldMatrix = mat4Identity();
+            worldMatrix = mat4Identity();
             worldMatrix =  mat4MultipMat4(scaleMatrix,worldMatrix);
             worldMatrix =  mat4MultipMat4(rotationMatrixZ,worldMatrix);
             worldMatrix =  mat4MultipMat4(rotationMatrixY,worldMatrix);
@@ -204,6 +220,9 @@ void update(void) {
 
             //Multiply the world matrix by the original vector
             transformedVertex = mat4MultipVec4(worldMatrix,transformedVertex);
+
+            //Multiply the view matrix by the vector to transform the scene to camera space
+            transformedVertex = mat4MultipVec4(viewMatrix,transformedVertex);
 
             //Save it into the global loop
             transformedVertices[j] = transformedVertex;
@@ -227,8 +246,10 @@ void update(void) {
             //Normalize the face normal
             vec3Normalize(&normal);
 
-            //Find the vector between point A in the triangle (can be any point) and the camera origin (For Camera ray)
-            vec3_t cameraRay = vec3Subtract(cameraPosition, vectorA);
+            //Find the vector between point A in the triangle (can be any point) and the origin (For Camera ray)
+
+            vec3_t origin = {0,0,0};
+            vec3_t cameraRay = vec3Subtract(origin, vectorA);
 
             //Calculate the alignment between the face and the camera
             float faceNormalAndCameraRayDotProduct = vec3DotProduct(cameraRay, normal);

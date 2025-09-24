@@ -178,6 +178,25 @@ vec4_t mat4MultipVec4(mat4_t m , vec4_t v){
     return result;
 }
 
+mat4_t mat4LookAt(vec3_t eye, vec3_t target, vec3_t up) {
+    // Compute the forward (z), right (x), and up (y) vectors
+    vec3_t z = vec3Subtract(target, eye);
+    vec3Normalize(&z);
+    vec3_t x = vec3Cross(up, z);
+    vec3Normalize(&x);
+    vec3_t y = vec3Cross(z, x);
+
+    mat4_t viewMatrix = {{
+        { x.x, x.y, x.z, -vec3DotProduct(x, eye) },
+        { y.x, y.y, y.z, -vec3DotProduct(y, eye) },
+        { z.x, z.y, z.z, -vec3DotProduct(z, eye) },
+        { 0,   0,   0,    1 }
+    }};
+
+    return viewMatrix;
+}
+
+
 
 
 

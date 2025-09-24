@@ -20,6 +20,6 @@ vec4_t mat4MultipVec4Project(mat4_t matProj, vec4_t v);
 mat4_t mat4MultipMat4(mat4_t a, mat4_t b);
 
 vec4_t mat4MultipVec4(mat4_t m , vec4_t v);
-
+mat4_t mat4LookAt(vec3_t eye, vec3_t target, vec3_t up);
 
 #endif //MATRIX_H
