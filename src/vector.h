@@ -27,6 +27,8 @@ void vec2Normalize (vec2_t* v);
 
 
 //3D vec functions
+vec3_t vec3New(float x, float y, float z);
+vec3_t vec3Clone(vec3_t* v);
 float vec3Length(vec3_t v);
 vec3_t vec3Add(vec3_t a, vec3_t b);
 vec3_t vec3Subtract(vec3_t a, vec3_t b);

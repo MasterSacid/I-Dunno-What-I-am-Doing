@@ -33,6 +33,8 @@ add_executable(renderingInC src/main.c
         src/upng.h
         src/camera.c
         src/camera.h
+        src/clipping.c
+        src/clipping.h
 )
 
 

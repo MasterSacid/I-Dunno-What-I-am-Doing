@@ -52,6 +52,17 @@ void vec2Normalize (vec2_t* v) {
 
 
 //--------------------- Vec3D functions are here ------------------------
+vec3_t vec3New(float x, float y, float z) {
+    vec3_t result = { x, y, z };
+    return result;
+}
+
+vec3_t vec3Clone(vec3_t* v) {
+    vec3_t result = {v->x, v->y, v->z};
+    return result;
+}
+
+
 float vec3Length(vec3_t v) {
     return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
