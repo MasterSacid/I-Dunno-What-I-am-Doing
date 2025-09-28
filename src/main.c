@@ -58,7 +58,7 @@ int main(void) {
         render();
     }
 
-    destroyWindow();
+
     freeResources();
 
 
@@ -67,14 +67,13 @@ int main(void) {
 
 
 void setup(void) {
-
     setRenderMode(RENDER_WIRE);
     setCullMode(CULL_BACKFACE);
 
     float aspectY = (float) getWindowHeight() / (float) getWindowWidth();
     float aspectX = (float) getWindowWidth() / (float) getWindowHeight();
     float fovY = M_PI / 3.0; //60 degrees to radians
-    float fovX = 2.0 * atan(tan(fovY/2) * aspectX);
+    float fovX = 2.0 * atan(tan(fovY / 2) * aspectX);
     float zNear = 0.1;
     float zFar = 100.0;
     projMatrix = mat4MakePerspective(fovY, aspectY, zNear, zFar);
@@ -87,33 +86,24 @@ void setup(void) {
 
 
     //Load the OBJ FIle
-    //loadCubeMeshData();
-
-    loadObjFileData("../assets/Car 01/Car.obj");
-    loadPngTextureData("../assets/Car 01/car.png");
-
-    //loadObjFileData("../assets/cube.obj");
-    //loadPngTextureData("../assets/MamaHong.png");
-    //loadPngTextureData("../assets/upscaled.png");
+    loadMesh("../assets/Car 01/Car.obj", "../assets/Car 01/car.png", vec3New(1, 1, 1), vec3New(-3, 0, 8),vec3New(0, 0, 0));
+    loadMesh("../assets/cube.obj", "../assets/upscaled.png", vec3New(1, 1, 1), vec3New(3, 0, 8), vec3New(0, 0, 0));
 
 
     // --- Camera init & mouse-look enable ---
-    initCamera((vec3_t){0.0f, 1.5f, -3.0f}, (vec3_t){0.0f, 0.0f, 1.0f});  // pos, dir (+Z)
-    SDL_SetRelativeMouseMode(SDL_TRUE);   // capture mouse and send xrel/yrel
-
+    initCamera((vec3_t){0.0f, 1.5f, -3.0f}, (vec3_t){0.0f, 0.0f, 1.0f}); // pos, dir (+Z)
+    SDL_SetRelativeMouseMode(SDL_TRUE); // capture mouse and send xrel/yrel
 }
 
-#include "camera.h"   // <- ensure this is included where processInput is defined
-
 void processInput(void) {
-    const float moveYSpeed    = 8.0f * deltaTime;    // world Y
-    const float movePlanarSpd = 10.0f * deltaTime;   // WASD/strafe
-    const float maxPitch      = 1.55334306f;         // ~89°
+    const float moveYSpeed = 8.0f * deltaTime; // world Y
+    const float movePlanarSpd = 10.0f * deltaTime; // WASD/strafe
+    const float maxPitch = 1.55334306f; // ~89°
 
     // Mouse-look config (tweak freely)
-    static float mouseSensitivity = 0.0025f;  // radians per pixel
-    static bool  invertMouseY     = true;     // true => moving mouse up looks up
-    static bool  invertMouseX     = false;
+    static float mouseSensitivity = 0.0025f; // radians per pixel
+    static bool invertMouseY = true; // true => moving mouse up looks up
+    static bool invertMouseX = false;
 
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -125,19 +115,28 @@ void processInput(void) {
             case SDL_KEYDOWN: {
                 SDL_Keycode k = event.key.keysym.sym;
                 switch (k) {
-                    case SDLK_ESCAPE: isRunning = false; break;
+                    case SDLK_ESCAPE: isRunning = false;
+                        break;
 
                     // Render modes
-                    case SDLK_1: setRenderMode(RENDER_WIRE_VERTEX); break;
-                    case SDLK_2: setRenderMode(RENDER_WIRE); break;
-                    case SDLK_3: setRenderMode(RENDER_FILL_TRIANGLE); break;
-                    case SDLK_4: setRenderMode(RENDER_FILL_TRIANGLE_WIRE); break;
-                    case SDLK_5: setRenderMode(RENDER_TEXTURED); break;
-                    case SDLK_6: setRenderMode(RENDER_TEXTURED_WIRE); break;
+                    case SDLK_1: setRenderMode(RENDER_WIRE_VERTEX);
+                        break;
+                    case SDLK_2: setRenderMode(RENDER_WIRE);
+                        break;
+                    case SDLK_3: setRenderMode(RENDER_FILL_TRIANGLE);
+                        break;
+                    case SDLK_4: setRenderMode(RENDER_FILL_TRIANGLE_WIRE);
+                        break;
+                    case SDLK_5: setRenderMode(RENDER_TEXTURED);
+                        break;
+                    case SDLK_6: setRenderMode(RENDER_TEXTURED_WIRE);
+                        break;
 
                     // Culling
-                    case SDLK_c: setCullMode(CULL_BACKFACE); break;
-                    case SDLK_x: setCullMode(CULL_NONE); break;
+                    case SDLK_c: setCullMode(CULL_BACKFACE);
+                        break;
+                    case SDLK_x: setCullMode(CULL_NONE);
+                        break;
 
                     default: break;
                 }
@@ -145,8 +144,8 @@ void processInput(void) {
             }
 
             case SDL_MOUSEMOTION: {
-                float yawDelta   =  mouseSensitivity * (float)event.motion.xrel;
-                float pitchDelta =  mouseSensitivity * (float)event.motion.yrel;
+                float yawDelta = mouseSensitivity * (float) event.motion.xrel;
+                float pitchDelta = mouseSensitivity * (float) event.motion.yrel;
 
                 if (invertMouseX) yawDelta = -yawDelta;
 
@@ -154,10 +153,10 @@ void processInput(void) {
 
                 rotateCameraYaw(yawDelta);
 
-                float p  = getCameraPitch();
+                float p = getCameraPitch();
                 float np = p + pitchDelta;
                 if (np < -maxPitch) np = -maxPitch;
-                if (np >  maxPitch) np =  maxPitch;
+                if (np > maxPitch) np = maxPitch;
                 rotateCameraPitch(np - p);
                 break;
             }
@@ -165,7 +164,7 @@ void processInput(void) {
     }
 
     // --------- Keyboard movement---------
-    const Uint8* ks = SDL_GetKeyboardState(NULL);
+    const Uint8 *ks = SDL_GetKeyboardState(NULL);
 
     // Build planar basis from current facing
     vec3_t forward = getCameraDirection();
@@ -173,21 +172,21 @@ void processInput(void) {
     if (vec3Length(forward) > 0.0f)
         vec3Normalize(&forward);
 
-    vec3_t up = (vec3_t){0,1,0};
+    vec3_t up = (vec3_t){0, 1, 0};
     vec3_t right = vec3Cross(forward, up);
     if (vec3Length(right) > 0.0f)
         vec3Normalize(&right);
 
-    vec3_t move = (vec3_t){0,0,0};
+    vec3_t move = (vec3_t){0, 0, 0};
 
     // FPS movement: W/S forward/back, A/D strafe left/right
     if (ks[SDL_SCANCODE_W]) move = vec3Add(move, vec3Multiply(forward, movePlanarSpd));
     if (ks[SDL_SCANCODE_S]) move = vec3Subtract(move, vec3Multiply(forward, movePlanarSpd));
-    if (ks[SDL_SCANCODE_A]) move = vec3Add(move, vec3Multiply(right,   movePlanarSpd));   // strafe right
-    if (ks[SDL_SCANCODE_D]) move = vec3Subtract(move, vec3Multiply(right,   movePlanarSpd)); // strafe left
+    if (ks[SDL_SCANCODE_A]) move = vec3Add(move, vec3Multiply(right, movePlanarSpd)); // strafe right
+    if (ks[SDL_SCANCODE_D]) move = vec3Subtract(move, vec3Multiply(right, movePlanarSpd)); // strafe left
 
     // Space up, Ctrl down
-    if (ks[SDL_SCANCODE_SPACE])                           move.y += moveYSpeed;
+    if (ks[SDL_SCANCODE_SPACE]) move.y += moveYSpeed;
     if (ks[SDL_SCANCODE_LCTRL] || ks[SDL_SCANCODE_RCTRL]) move.y -= moveYSpeed;
 
     if (move.x || move.y || move.z) {
@@ -216,166 +215,167 @@ void update(void) {
     //Initialize the counter of triangles for the current frame
     numTrianglesToRender = 0;
 
-    //Change the mesh scale, rotation, translation....  every frame
 
-    //mesh.rotation.x += 0.01 * deltaTime;
-    //mesh.rotation.y += 1.0 * deltaTime;
-    //mesh.rotation.z += 0.01 * deltaTime;
+    for (int meshIndex = 0; meshIndex < getNumOfMeshes(); meshIndex++) {
+        mesh_t* mesh = getMesh(meshIndex);
 
 
-    //mesh.scale.x += 0.002;
-    //mesh.scale.y += 0.001;
+
+        //Change the mesh scale, rotation, translation....  every frame
+
+        //mesh.rotation.x += 0.01 * deltaTime;
+        //mesh.rotation.y += 1.0 * deltaTime;
+        //mesh.rotation.z += 0.01 * deltaTime;
+        //mesh.scale.x += 0.002;
+        //mesh.scale.y += 0.001;
+        //mesh.translation.x += 1.0 * deltaTime;
+        //mesh.translation.z = 6.00;
 
 
-    //mesh.translation.x += 1.0 * deltaTime;
-    mesh.translation.z = 6.00;
+        viewMatrix = mat4LookAt(getCameraPosition(), getCameraLookatTarget(), (vec3_t){0, 1, 0});
 
 
-    viewMatrix = mat4LookAt(getCameraPosition(), getCameraLookatTarget(), (vec3_t){0,1,0});
+        //Create a scale matrix that will be used to multiply the mesh vertices
+        mat4_t scaleMatrix = mat4MakeScale(mesh->scale.x, mesh->scale.y, mesh->scale.z);
+
+        //Create a translation matrix that will be used to multiply the mesh vertices
+        mat4_t translationMatrix = mat4MakeTranslation(mesh->translation.x, mesh -> translation.y, mesh -> translation.z);
+        //Create  rotation matrixws that will be used to multiply the mesh vertices
+        mat4_t rotationMatrixX = mat4MakeRotationX(mesh -> rotation.x);
+        mat4_t rotationMatrixY = mat4MakeRotationY(mesh -> rotation.y);
+        mat4_t rotationMatrixZ = mat4MakeRotationZ(mesh -> rotation.z);
 
 
-    //Create a scale matrix that will be used to multiply the mesh vertices
-    mat4_t scaleMatrix = mat4MakeScale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
-
-    //Create a translation matrix that will be used to multiply the mesh vertices
-    mat4_t translationMatrix = mat4MakeTranslation(mesh.translation.x, mesh.translation.y, mesh.translation.z);
-    //Create  rotation matrixws that will be used to multiply the mesh vertices
-    mat4_t rotationMatrixX = mat4MakeRotationX(mesh.rotation.x);
-    mat4_t rotationMatrixY = mat4MakeRotationY(mesh.rotation.y);
-    mat4_t rotationMatrixZ = mat4MakeRotationZ(mesh.rotation.z);
-
-
-    int numFaces = array_length(mesh.faces);
-    //Goes through triangular faces
-    for (int i = 0; i < numFaces; i++) {
+        int numFaces = array_length(mesh -> faces);
+        //Goes through triangular faces
+        for (int i = 0; i < numFaces; i++) {
+            face_t meshFace = mesh -> faces[i];
+            vec3_t faceVertices[3];
+            faceVertices[0] = mesh -> vertices[meshFace.a];
+            faceVertices[1] = mesh -> vertices[meshFace.b];
+            faceVertices[2] = mesh -> vertices[meshFace.c];
 
 
-        face_t meshFace = mesh.faces[i];
-        vec3_t faceVertices[3];
-        faceVertices[0] = mesh.vertices[meshFace.a];
-        faceVertices[1] = mesh.vertices[meshFace.b];
-        faceVertices[2] = mesh.vertices[meshFace.c];
+            vec4_t transformedVertices[3];
 
-
-        vec4_t transformedVertices[3];
-
-        //loop all three vertices of the face and aplly rotations
-        for (int j = 0; j < 3; j++) {
-            vec4_t transformedVertex = vec3ToVec4(faceVertices[j]);
-
-
-            //Create  a world matrix combining scale, rotation and translation (The order matters a lott!!!!)
-            worldMatrix = mat4Identity();
-            worldMatrix = mat4MultipMat4(scaleMatrix, worldMatrix);
-            worldMatrix = mat4MultipMat4(rotationMatrixZ, worldMatrix);
-            worldMatrix = mat4MultipMat4(rotationMatrixY, worldMatrix);
-            worldMatrix = mat4MultipMat4(rotationMatrixX, worldMatrix);
-            worldMatrix = mat4MultipMat4(translationMatrix, worldMatrix);
-
-            //Multiply the world matrix by the original vector
-            transformedVertex = mat4MultipVec4(worldMatrix, transformedVertex);
-
-            //Multiply the view matrix by the vector to transform the scene to camera space
-            transformedVertex = mat4MultipVec4(viewMatrix, transformedVertex);
-
-            //Save it into the global loop
-            transformedVertices[j] = transformedVertex;
-        }
-
-
-        //Dont forget this is in CLOCKWISE ORDER
-        vec3_t vectorA = vec4ToVec3(transformedVertices[0]);
-        vec3_t vectorB = vec4ToVec3(transformedVertices[1]);
-        vec3_t vectorC = vec4ToVec3(transformedVertices[2]);
-
-        //Find the vector between points
-        vec3_t vectorAB = vec3Subtract(vectorB, vectorA);
-        vec3_t vectorAC = vec3Subtract(vectorC, vectorA);
-        vec3Normalize(&vectorAB);
-        vec3Normalize(&vectorAC);
-
-        //Compute the face normal using the cross product
-        vec3_t normal = vec3Cross(vectorAB, vectorAC);
-
-        //Normalize the face normal
-        vec3Normalize(&normal);
-
-        //Find the vector between point A in the triangle (can be any point) and the origin (For Camera ray)
-
-        vec3_t origin = {0, 0, 0};
-        vec3_t cameraRay = vec3Subtract(origin, vectorA);
-
-        //Calculate the alignment between the face and the camera
-        float faceNormalAndCameraRayDotProduct = vec3DotProduct(cameraRay, normal);
-
-        //-------------- Make the backface culling ---------
-        if (faceNormalAndCameraRayDotProduct < 0 && isCullBackface())
-            continue; // we bypass everything
-
-        //Create a polygon from the original transform
-        polygon_t polygon = createPolygonFromTriangle(
-            vec4ToVec3(transformedVertices[0]),
-            vec4ToVec3(transformedVertices[1]),
-            vec4ToVec3(transformedVertices[2]),
-            meshFace.aUv,
-            meshFace.bUv,
-            meshFace.cUv
-        );
-        //Clip the polygon
-        clipPolygon(&polygon);
-
-        //break the polygon into triangles
-        triangle_t trianglesAfterClipping[MAX_NUM_POLY_TRIANGLES];
-        int numTrianglesAfterClipping = 0;
-
-        trianglesFromPolygon(&polygon, trianglesAfterClipping, &numTrianglesAfterClipping);
-
-        //Loops all the assembled triangles
-        for (int t = 0; t < numTrianglesAfterClipping; t++) {
-            triangle_t triangleAfterClipping = trianglesAfterClipping[t];
-
-            vec4_t projectedPoints[3];
-            //Now we do projection and loop all the faces if it is not at the back
+            //loop all three vertices of the face and aplly rotations
             for (int j = 0; j < 3; j++) {
-                projectedPoints[j] = mat4MultipVec4Project(projMatrix, triangleAfterClipping.points[j]);
-
-                //Scale them
-                projectedPoints[j].x *= (getWindowWidth() / 2.0);
-                projectedPoints[j].y *= (getWindowHeight() / 2.0);
-
-                projectedPoints[j].y *= -1;
+                vec4_t transformedVertex = vec3ToVec4(faceVertices[j]);
 
 
-                //After projecting them (And scaling them) move  them to the middle of the screen
-                projectedPoints[j].x += (getWindowWidth() / 2.0);
-                projectedPoints[j].y += (getWindowHeight() / 2.0);
+                //Create  a world matrix combining scale, rotation and translation (The order matters a lott!!!!)
+                worldMatrix = mat4Identity();
+                worldMatrix = mat4MultipMat4(scaleMatrix, worldMatrix);
+                worldMatrix = mat4MultipMat4(rotationMatrixZ, worldMatrix);
+                worldMatrix = mat4MultipMat4(rotationMatrixY, worldMatrix);
+                worldMatrix = mat4MultipMat4(rotationMatrixX, worldMatrix);
+                worldMatrix = mat4MultipMat4(translationMatrix, worldMatrix);
+
+                //Multiply the world matrix by the original vector
+                transformedVertex = mat4MultipVec4(worldMatrix, transformedVertex);
+
+                //Multiply the view matrix by the vector to transform the scene to camera space
+                transformedVertex = mat4MultipVec4(viewMatrix, transformedVertex);
+
+                //Save it into the global loop
+                transformedVertices[j] = transformedVertex;
             }
 
-            //Light and Shading
-            float faceNormalAndLightRayDotProduct = vec3DotProduct(normal, light.direction);
-            float ambient = 0.2f; // Base ambient light
-            float diffuse = fmax(0.0f, faceNormalAndLightRayDotProduct);
-            float intensity = ambient + (1.0f - ambient) * diffuse;
-            uint32_t shadedColor = lightApplyIntensity(meshFace.color, intensity);
 
-            triangle_t triangleToRender = {
-                .points = {
-                    {projectedPoints[0].x, projectedPoints[0].y, projectedPoints[0].z, projectedPoints[0].w},
-                    {projectedPoints[1].x, projectedPoints[1].y, projectedPoints[1].z, projectedPoints[1].w},
-                    {projectedPoints[2].x, projectedPoints[2].y, projectedPoints[2].z, projectedPoints[2].w},
-                },
-                .texCoords = {
-                    {triangleAfterClipping.texCoords[0].u, triangleAfterClipping.texCoords[0].v},
-                    {triangleAfterClipping.texCoords[1].u, triangleAfterClipping.texCoords[1].v},
-                    {triangleAfterClipping.texCoords[2].u, triangleAfterClipping.texCoords[2].v}
-                },
-                .color = shadedColor,
+            //Dont forget this is in CLOCKWISE ORDER
+            vec3_t vectorA = vec4ToVec3(transformedVertices[0]);
+            vec3_t vectorB = vec4ToVec3(transformedVertices[1]);
+            vec3_t vectorC = vec4ToVec3(transformedVertices[2]);
 
-            };
+            //Find the vector between points
+            vec3_t vectorAB = vec3Subtract(vectorB, vectorA);
+            vec3_t vectorAC = vec3Subtract(vectorC, vectorA);
+            vec3Normalize(&vectorAB);
+            vec3Normalize(&vectorAC);
 
-            if (numTrianglesToRender < MAX_TRIANGLES_PER_MESH) {
-                trianglesToRender[numTrianglesToRender] = triangleToRender;
-                numTrianglesToRender++;
+            //Compute the face normal using the cross product
+            vec3_t normal = vec3Cross(vectorAB, vectorAC);
+
+            //Normalize the face normal
+            vec3Normalize(&normal);
+
+            //Find the vector between point A in the triangle (can be any point) and the origin (For Camera ray)
+
+            vec3_t origin = {0, 0, 0};
+            vec3_t cameraRay = vec3Subtract(origin, vectorA);
+
+            //Calculate the alignment between the face and the camera
+            float faceNormalAndCameraRayDotProduct = vec3DotProduct(cameraRay, normal);
+
+            //-------------- Make the backface culling ---------
+            if (faceNormalAndCameraRayDotProduct < 0 && isCullBackface())
+                continue; // we bypass everything
+
+            //Create a polygon from the original transform
+            polygon_t polygon = createPolygonFromTriangle(
+                vec4ToVec3(transformedVertices[0]),
+                vec4ToVec3(transformedVertices[1]),
+                vec4ToVec3(transformedVertices[2]),
+                meshFace.aUv,
+                meshFace.bUv,
+                meshFace.cUv
+            );
+            //Clip the polygon
+            clipPolygon(&polygon);
+
+            //break the polygon into triangles
+            triangle_t trianglesAfterClipping[MAX_NUM_POLY_TRIANGLES];
+            int numTrianglesAfterClipping = 0;
+
+            trianglesFromPolygon(&polygon, trianglesAfterClipping, &numTrianglesAfterClipping);
+
+            //Loops all the assembled triangles
+            for (int t = 0; t < numTrianglesAfterClipping; t++) {
+                triangle_t triangleAfterClipping = trianglesAfterClipping[t];
+
+                vec4_t projectedPoints[3];
+                //Now we do projection and loop all the faces if it is not at the back
+                for (int j = 0; j < 3; j++) {
+                    projectedPoints[j] = mat4MultipVec4Project(projMatrix, triangleAfterClipping.points[j]);
+
+                    //Scale them
+                    projectedPoints[j].x *= (getWindowWidth() / 2.0);
+                    projectedPoints[j].y *= (getWindowHeight() / 2.0);
+
+                    projectedPoints[j].y *= -1;
+
+
+                    //After projecting them (And scaling them) move  them to the middle of the screen
+                    projectedPoints[j].x += (getWindowWidth() / 2.0);
+                    projectedPoints[j].y += (getWindowHeight() / 2.0);
+                }
+
+                //Light and Shading
+                float faceNormalAndLightRayDotProduct = vec3DotProduct(normal, light.direction);
+                float ambient = 0.2f; // Base ambient light
+                float diffuse = fmax(0.0f, faceNormalAndLightRayDotProduct);
+                float intensity = ambient + (1.0f - ambient) * diffuse;
+                uint32_t shadedColor = lightApplyIntensity(meshFace.color, intensity);
+
+                triangle_t triangleToRender = {
+                    .points = {
+                        {projectedPoints[0].x, projectedPoints[0].y, projectedPoints[0].z, projectedPoints[0].w},
+                        {projectedPoints[1].x, projectedPoints[1].y, projectedPoints[1].z, projectedPoints[1].w},
+                        {projectedPoints[2].x, projectedPoints[2].y, projectedPoints[2].z, projectedPoints[2].w},
+                    },
+                    .texCoords = {
+                        {triangleAfterClipping.texCoords[0].u, triangleAfterClipping.texCoords[0].v},
+                        {triangleAfterClipping.texCoords[1].u, triangleAfterClipping.texCoords[1].v},
+                        {triangleAfterClipping.texCoords[2].u, triangleAfterClipping.texCoords[2].v}
+                    },
+                    .color = shadedColor,
+                    .texture = mesh ->texture
+                };
+
+                if (numTrianglesToRender < MAX_TRIANGLES_PER_MESH) {
+                    trianglesToRender[numTrianglesToRender] = triangleToRender;
+                    numTrianglesToRender++;
+                }
             }
         }
     }
@@ -383,7 +383,6 @@ void update(void) {
 
 
 void render(void) {
-
     //Fresh Start
     clearColorBuffer(0xFF000000);
     clearZBuffer();
@@ -410,9 +409,9 @@ void render(void) {
                 triangle.texCoords[1].u, triangle.texCoords[1].v, //Vertex B
                 triangle.points[2].x, triangle.points[2].y, triangle.points[2].z, triangle.points[2].w,
                 triangle.texCoords[2].u, triangle.texCoords[2].v, //Vertex C
-                meshTexture
+                triangle.texture
 
-            );
+             );
         }
 
         //Unfilled Triangles for wireframe view
@@ -434,14 +433,10 @@ void render(void) {
     }
     //Its ready to be rendered now
     renderColorBuffer();
-
 }
 
 void freeResources(void) {
-
-    upng_free(pngTexture);
-    array_free(mesh.faces);
-    array_free(mesh.vertices);
+    freeMeshes();
+    destroyWindow();
     SDL_SetRelativeMouseMode(SDL_FALSE);
-
 }
