@@ -34,11 +34,11 @@
 
 
         //Only draw the pixel if the depth value is the less than the one previously stored in the z buffer
-        if (interpolatedReciprocalW < zBuffer[(windowWidth * y) + x]) {
+        if (interpolatedReciprocalW < getZBufferAt(x,y)) {
             drawPixel(x,y,color);
 
             //Update the z buffer value with 1/w of current pixel
-            zBuffer[(windowWidth * y ) + x] = interpolatedReciprocalW;
+            updateZBufferAt(x,y,interpolatedReciprocalW);
         }
 }
 
@@ -205,11 +205,11 @@ void drawTexel(
 
 
         //Only draw the pixel if the depth value is the less than the one previously stored in the z buffer
-        if (interpolatedReciprocalW < zBuffer[(windowWidth * y) + x]) {
+        if (interpolatedReciprocalW < getZBufferAt(x,y)) {
             drawPixel(x,y,texture[(textureWidth * texY) + texX]);
 
             //Update the z buffer value with 1/w of current pixel
-            zBuffer[(windowWidth * y ) + x] = interpolatedReciprocalW;
+            updateZBufferAt(x,y,interpolatedReciprocalW);
         }
 
 

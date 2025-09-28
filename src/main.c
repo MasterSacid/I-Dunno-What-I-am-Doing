@@ -67,32 +67,19 @@ int main(void) {
 
 
 void setup(void) {
-    renderMode = RENDER_WIRE;
-    cullMode = CULL_BACKFACE;
 
-    //Allocate the required memory to hold the color  and zbuffers
-    colorBuffer = (uint32_t *) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
-    zBuffer = (float *) malloc(sizeof(float) * windowWidth * windowHeight);
+    setRenderMode(RENDER_WIRE);
+    setCullMode(CULL_BACKFACE);
 
-    //Creating a SDL texture that is used to display the color buffer
-    colorBufferTexture = SDL_CreateTexture(
-        renderer,
-        SDL_PIXELFORMAT_RGBA32,
-        SDL_TEXTUREACCESS_STREAMING,
-        windowWidth,
-        windowHeight
-    );
-
-    float aspectY = (float) windowHeight / (float) windowWidth;
-    float aspectX = (float) windowWidth / (float) windowHeight;
+    float aspectY = (float) getWindowHeight() / (float) getWindowWidth();
+    float aspectX = (float) getWindowWidth() / (float) getWindowHeight();
     float fovY = M_PI / 3.0; //60 degrees to radians
     float fovX = 2.0 * atan(tan(fovY/2) * aspectX);
     float zNear = 0.1;
     float zFar = 100.0;
-
     projMatrix = mat4MakePerspective(fovY, aspectY, zNear, zFar);
-    initFrustumPlanes(fovX, fovY, zNear, zFar);
 
+    initFrustumPlanes(fovX, fovY, zNear, zFar);
 
     vec3_t sunRaysDir = {0.0f, 0.0f, 1.0f};
     vec3Normalize(&sunRaysDir);
@@ -102,62 +89,114 @@ void setup(void) {
     //Load the OBJ FIle
     //loadCubeMeshData();
 
-    //loadObjFileData("../assets/Car 01/Car.obj");
-    //loadPngTextureData("../assets/Car 01/car.png");
+    loadObjFileData("../assets/Car 01/Car.obj");
+    loadPngTextureData("../assets/Car 01/car.png");
 
-    loadObjFileData("../assets/cube.obj");
+    //loadObjFileData("../assets/cube.obj");
     //loadPngTextureData("../assets/MamaHong.png");
-    loadPngTextureData("../assets/upscaled.png");
+    //loadPngTextureData("../assets/upscaled.png");
+
+
+    // --- Camera init & mouse-look enable ---
+    initCamera((vec3_t){0.0f, 1.5f, -3.0f}, (vec3_t){0.0f, 0.0f, 1.0f});  // pos, dir (+Z)
+    SDL_SetRelativeMouseMode(SDL_TRUE);   // capture mouse and send xrel/yrel
+
 }
+
+#include "camera.h"   // <- ensure this is included where processInput is defined
 
 void processInput(void) {
+    const float moveYSpeed    = 8.0f * deltaTime;    // world Y
+    const float movePlanarSpd = 10.0f * deltaTime;   // WASD/strafe
+    const float maxPitch      = 1.55334306f;         // ~89°
+
+    // Mouse-look config (tweak freely)
+    static float mouseSensitivity = 0.0025f;  // radians per pixel
+    static bool  invertMouseY     = true;     // true => moving mouse up looks up
+    static bool  invertMouseX     = false;
+
     SDL_Event event;
-    SDL_PollEvent(&event);
-
-    switch (event.type) {
-        case SDL_QUIT:
-            isRunning = false;
-            break;
-        case SDL_KEYDOWN:
-            if (event.key.keysym.sym == SDLK_ESCAPE)
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_QUIT:
                 isRunning = false;
-            if (event.key.keysym.sym == SDLK_1)
-                renderMode = RENDER_WIRE_VERTEX;
-            if (event.key.keysym.sym == SDLK_2)
-                renderMode = RENDER_WIRE;
-            if (event.key.keysym.sym == SDLK_3)
-                renderMode = RENDER_FILL_TRIANGLE;
-            if (event.key.keysym.sym == SDLK_4)
-                renderMode = RENDER_FILL_TRIANGLE_WIRE;
-            if (event.key.keysym.sym == SDLK_5)
-                renderMode = RENDER_TEXTURED;
-            if (event.key.keysym.sym == SDLK_6)
-                renderMode = RENDER_TEXTURED_WIRE;
-            if (event.key.keysym.sym == SDLK_c)
-                cullMode = CULL_BACKFACE;
-            if (event.key.keysym.sym == SDLK_x)
-                cullMode = CULL_NONE;
-            if (event.key.keysym.sym == SDLK_UP)
-                camera.position.y += 8.0 * deltaTime;
-            if (event.key.keysym.sym == SDLK_DOWN)
-                camera.position.y -= 8.0 * deltaTime;
-            if (event.key.keysym.sym == SDLK_a)
-                camera.yaw -= 8.0 * deltaTime;
-            if (event.key.keysym.sym == SDLK_d)
-                camera.yaw += 8.0 * deltaTime;
-            if (event.key.keysym.sym == SDLK_w) {
-                camera.forwardVelocity = vec3Multiply(camera.direction, 20.0 * deltaTime);
-                camera.position = vec3Add(camera.position, camera.forwardVelocity);
-            }
-            if (event.key.keysym.sym == SDLK_s) {
-                camera.forwardVelocity = vec3Multiply(camera.direction, 20.0 * deltaTime);
-                camera.position = vec3Subtract(camera.position, camera.forwardVelocity);
+                break;
+
+            case SDL_KEYDOWN: {
+                SDL_Keycode k = event.key.keysym.sym;
+                switch (k) {
+                    case SDLK_ESCAPE: isRunning = false; break;
+
+                    // Render modes
+                    case SDLK_1: setRenderMode(RENDER_WIRE_VERTEX); break;
+                    case SDLK_2: setRenderMode(RENDER_WIRE); break;
+                    case SDLK_3: setRenderMode(RENDER_FILL_TRIANGLE); break;
+                    case SDLK_4: setRenderMode(RENDER_FILL_TRIANGLE_WIRE); break;
+                    case SDLK_5: setRenderMode(RENDER_TEXTURED); break;
+                    case SDLK_6: setRenderMode(RENDER_TEXTURED_WIRE); break;
+
+                    // Culling
+                    case SDLK_c: setCullMode(CULL_BACKFACE); break;
+                    case SDLK_x: setCullMode(CULL_NONE); break;
+
+                    default: break;
+                }
+                break;
             }
 
-            break;
+            case SDL_MOUSEMOTION: {
+                float yawDelta   =  mouseSensitivity * (float)event.motion.xrel;
+                float pitchDelta =  mouseSensitivity * (float)event.motion.yrel;
+
+                if (invertMouseX) yawDelta = -yawDelta;
+
+                if (!invertMouseY) pitchDelta = -pitchDelta;
+
+                rotateCameraYaw(yawDelta);
+
+                float p  = getCameraPitch();
+                float np = p + pitchDelta;
+                if (np < -maxPitch) np = -maxPitch;
+                if (np >  maxPitch) np =  maxPitch;
+                rotateCameraPitch(np - p);
+                break;
+            }
+        }
+    }
+
+    // --------- Keyboard movement---------
+    const Uint8* ks = SDL_GetKeyboardState(NULL);
+
+    // Build planar basis from current facing
+    vec3_t forward = getCameraDirection();
+    forward.y = 0.0f;
+    if (vec3Length(forward) > 0.0f)
+        vec3Normalize(&forward);
+
+    vec3_t up = (vec3_t){0,1,0};
+    vec3_t right = vec3Cross(forward, up);
+    if (vec3Length(right) > 0.0f)
+        vec3Normalize(&right);
+
+    vec3_t move = (vec3_t){0,0,0};
+
+    // FPS movement: W/S forward/back, A/D strafe left/right
+    if (ks[SDL_SCANCODE_W]) move = vec3Add(move, vec3Multiply(forward, movePlanarSpd));
+    if (ks[SDL_SCANCODE_S]) move = vec3Subtract(move, vec3Multiply(forward, movePlanarSpd));
+    if (ks[SDL_SCANCODE_A]) move = vec3Add(move, vec3Multiply(right,   movePlanarSpd));   // strafe right
+    if (ks[SDL_SCANCODE_D]) move = vec3Subtract(move, vec3Multiply(right,   movePlanarSpd)); // strafe left
+
+    // Space up, Ctrl down
+    if (ks[SDL_SCANCODE_SPACE])                           move.y += moveYSpeed;
+    if (ks[SDL_SCANCODE_LCTRL] || ks[SDL_SCANCODE_RCTRL]) move.y -= moveYSpeed;
+
+    if (move.x || move.y || move.z) {
+        vec3_t pos = getCameraPosition();
+        pos = vec3Add(pos, move);
+        updateCameraPosition(pos);
+        updateCameraForwardVelocity(move);
     }
 }
-
 
 void update(void) {
     //This snippet limits the FPS
@@ -192,17 +231,8 @@ void update(void) {
     mesh.translation.z = 6.00;
 
 
-    //Initialize the target looking at the positive z axis
-    vec3_t target = {0, 0, 1};
-    mat4_t cameraYawRotation = mat4MakeRotationY(camera.yaw);
-    camera.direction = vec4ToVec3(mat4MultipVec4(cameraYawRotation, vec3ToVec4(target)));
+    viewMatrix = mat4LookAt(getCameraPosition(), getCameraLookatTarget(), (vec3_t){0,1,0});
 
-    //Offset the camera position
-    target = vec3Add(camera.position, camera.direction);
-    vec3_t upDirection = {0, 1, 0};
-
-    //Create a wiev matrix
-    viewMatrix = mat4LookAt(camera.position, target, upDirection);
 
     //Create a scale matrix that will be used to multiply the mesh vertices
     mat4_t scaleMatrix = mat4MakeScale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
@@ -279,7 +309,7 @@ void update(void) {
         float faceNormalAndCameraRayDotProduct = vec3DotProduct(cameraRay, normal);
 
         //-------------- Make the backface culling ---------
-        if (faceNormalAndCameraRayDotProduct < 0 && cullMode == CULL_BACKFACE)
+        if (faceNormalAndCameraRayDotProduct < 0 && isCullBackface())
             continue; // we bypass everything
 
         //Create a polygon from the original transform
@@ -310,15 +340,15 @@ void update(void) {
                 projectedPoints[j] = mat4MultipVec4Project(projMatrix, triangleAfterClipping.points[j]);
 
                 //Scale them
-                projectedPoints[j].x *= (windowWidth / 2.0);
-                projectedPoints[j].y *= (windowHeight / 2.0);
+                projectedPoints[j].x *= (getWindowWidth() / 2.0);
+                projectedPoints[j].y *= (getWindowHeight() / 2.0);
 
                 projectedPoints[j].y *= -1;
 
 
                 //After projecting them (And scaling them) move  them to the middle of the screen
-                projectedPoints[j].x += (windowWidth / 2.0);
-                projectedPoints[j].y += (windowHeight / 2.0);
+                projectedPoints[j].x += (getWindowWidth() / 2.0);
+                projectedPoints[j].y += (getWindowHeight() / 2.0);
             }
 
             //Light and Shading
@@ -353,14 +383,16 @@ void update(void) {
 
 
 void render(void) {
-    //drawGrid();
 
+    //Fresh Start
+    clearColorBuffer(0xFF000000);
+    clearZBuffer();
 
     for (int i = 0; i < numTrianglesToRender; i++) {
         triangle_t triangle = trianglesToRender[i];
 
         //Filled Triangle
-        if (renderMode == RENDER_FILL_TRIANGLE || renderMode == RENDER_FILL_TRIANGLE_WIRE) {
+        if (shouldRenderFilledTriangles()) {
             drawFilledTriangle(
                 triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w,
                 triangle.points[1].x, triangle.points[1].y, triangle.points[1].z, triangle.points[1].w,
@@ -370,7 +402,7 @@ void render(void) {
         }
 
         //Textured Triangle
-        if (renderMode == RENDER_TEXTURED || renderMode == RENDER_TEXTURED_WIRE) {
+        if (shouldRenderTexturedTriangles()) {
             drawTexturedTriangle(
                 triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w,
                 triangle.texCoords[0].u, triangle.texCoords[0].v, //Vertex A
@@ -384,8 +416,7 @@ void render(void) {
         }
 
         //Unfilled Triangles for wireframe view
-        if (renderMode == RENDER_WIRE || renderMode == RENDER_WIRE_VERTEX || renderMode == RENDER_FILL_TRIANGLE_WIRE ||
-            renderMode == RENDER_TEXTURED_WIRE) {
+        if (shouldRenderWireframeTriangles()) {
             triangle_t triangle = trianglesToRender[i];
             drawTriangle(
                 triangle.points[0].x, triangle.points[0].y,
@@ -395,25 +426,22 @@ void render(void) {
             );
         }
 
-        if (renderMode == RENDER_WIRE_VERTEX) {
+        if (shouldRenderVertex()) {
             drawRect(triangle.points[0].x - 5, triangle.points[0].y - 5, 10, 10, 0xFFFF0000);
             drawRect(triangle.points[1].x - 5, triangle.points[1].y - 5, 10, 10, 0xFFFF0000);
             drawRect(triangle.points[2].x - 5, triangle.points[2].y - 5, 10, 10, 0xFFFF0000);
         }
     }
-
-
     //Its ready to be rendered now
     renderColorBuffer();
-    clearColorBuffer(0xFF000000);
-    clearZBuffer();
-    SDL_RenderPresent(renderer);
+
 }
 
 void freeResources(void) {
-    free(colorBuffer);
-    free(zBuffer);
+
     upng_free(pngTexture);
     array_free(mesh.faces);
     array_free(mesh.vertices);
+    SDL_SetRelativeMouseMode(SDL_FALSE);
+
 }

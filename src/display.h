@@ -6,13 +6,13 @@
 #include <SDL2/SDL.h>
 
 
-#define FPS 60
+#define FPS 120
 #define FRAME_TARGET_TIME (1000/FPS)
 
 enum cullMode {
     CULL_NONE,
     CULL_BACKFACE
-}cullMode;
+};
 
 enum renderMode {
     RENDER_WIRE,
@@ -21,17 +21,24 @@ enum renderMode {
     RENDER_FILL_TRIANGLE_WIRE,
     RENDER_TEXTURED,
     RENDER_TEXTURED_WIRE
-} renderMode;
+};
 
-extern SDL_Window* window;
-extern SDL_Renderer* renderer;
 
-extern SDL_Texture* colorBufferTexture;
-extern uint32_t* colorBuffer;
-extern float* zBuffer;
 
-extern int windowWidth;
-extern int windowHeight;
+int getWindowWidth(void);
+int getWindowHeight(void);
+void setRenderMode(int mode);
+void setCullMode(int mode);
+float getZBufferAt(int x, int y);
+void updateZBufferAt(int x, int y, float value);
+
+
+bool isCullBackface(void);
+bool shouldRenderFilledTriangles(void);
+bool shouldRenderTexturedTriangles(void);
+bool shouldRenderWireframeTriangles(void);
+bool shouldRenderVertex(void);
+
 
 
 bool initializeWindow(void);
