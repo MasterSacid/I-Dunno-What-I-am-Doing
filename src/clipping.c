@@ -39,11 +39,12 @@ void initFrustumPlanes(float fovX, float fovY, float zNear, float zFar) {
     frustumPlanes[FAR_FRUSTUM_PLANE].normal.z = -1;
 }
 
-polygon_t createPolygonFromTriangle(vec3_t v0, vec3_t v1, vec3_t v2,tex2_t t0, tex2_t t1, tex2_t t2){
+polygon_t createPolygonFromTriangle(vec3_t v0, vec3_t v1, vec3_t v2,tex2_t t0, tex2_t t1, tex2_t t2, float iA, float iB, float iC){
     polygon_t polygon = {
         .vertices = {v0,v1,v2},
         .texCoords = {t0,t1,t2},
-        .numVertices = 3
+        .numVertices = 3,
+        .intensities = {iA,iB,iC}
     };
     return polygon;
 }
@@ -62,6 +63,10 @@ void trianglesFromPolygon(polygon_t* polygon, triangle_t triangles[], int* numTr
         triangles[i].texCoords[0] = polygon ->texCoords[index0];
         triangles[i].texCoords[1] = polygon ->texCoords[index1];
         triangles[i].texCoords[2] = polygon ->texCoords[index2];
+
+        triangles[i].intensities[0] = polygon->intensities[index0];
+        triangles[i].intensities[1] = polygon->intensities[index1];
+        triangles[i].intensities[2] = polygon->intensities[index2];
     }
     *numTriangles = polygon ->numVertices - 2;
 }
@@ -77,6 +82,7 @@ void clipPolygonAgainstPlane(polygon_t* polygon,int plane) {
     //Array of inside vertices that will be part of the final polygon
     vec3_t insideVertices[MAX_NUM_POLY_VERTICES];
     tex2_t insideTexCoords[MAX_NUM_POLY_VERTICES];
+    float insideIntensities[MAX_NUM_POLY_VERTICES];
 
     int numInsideVertices = 0;
 
@@ -85,6 +91,9 @@ void clipPolygonAgainstPlane(polygon_t* polygon,int plane) {
 
     vec3_t* previousVertex = &polygon -> vertices[polygon -> numVertices -1];
     tex2_t* previousTexCoord = &polygon ->texCoords[polygon ->numVertices -1];
+
+    float* currentIntensity = &polygon -> intensities [0];
+    float* previousIntensity = &polygon -> intensities [polygon -> numVertices -1];
 
     float currentDot = 0;
     float prevDot = vec3DotProduct(vec3Subtract(*previousVertex,planePoint),planeNormal);
@@ -113,25 +122,34 @@ void clipPolygonAgainstPlane(polygon_t* polygon,int plane) {
                 .v = floatLerp(previousTexCoord -> v, currentTexCoord -> v, t)
             };
 
+            //For Intensities
+            float interpolatedIntensity = floatLerp(*previousIntensity,*currentIntensity,t);
+
             insideVertices[numInsideVertices] = vec3Clone(&intersectionPoint);
             insideTexCoords[numInsideVertices] = tex2Clone(&interpolatedTexCoord);
+            insideIntensities[numInsideVertices] = interpolatedIntensity;
             numInsideVertices++;
 
         }
 
         //Current vertex inside the plane
-        if (currentDot > 0) {
+        if (currentDot >= 0) {
             insideVertices[numInsideVertices] = vec3Clone(currentVertex);
             insideTexCoords[numInsideVertices] = tex2Clone(currentTexCoord);
+            insideIntensities[numInsideVertices]= *currentIntensity;
             numInsideVertices++;
         }
 
         prevDot = currentDot;
-        previousVertex = currentVertex;
+
+        previousVertex    = currentVertex;
         currentVertex++;
 
-        previousTexCoord = currentTexCoord;
+        previousTexCoord  = currentTexCoord;
         currentTexCoord++;
+
+        previousIntensity = currentIntensity;
+        currentIntensity++;
 
     }
 
@@ -139,6 +157,7 @@ void clipPolygonAgainstPlane(polygon_t* polygon,int plane) {
     for (int i = 0; i < numInsideVertices ; i++) {
         polygon -> vertices[i] = vec3Clone(&insideVertices[i]);
         polygon -> texCoords[i] = tex2Clone(&insideTexCoords[i]);
+        polygon->intensities[i]  = insideIntensities[i];
     }
     polygon -> numVertices = numInsideVertices;
 }
