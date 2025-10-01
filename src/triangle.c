@@ -1,8 +1,13 @@
 #include "triangle.h"
 #include "display.h"
+#include "light.h"
 #include "swap.h"
 
 
+
+static inline float clampf(float x, float lo, float hi) {
+    return x < lo ? lo : (x > hi ? hi : x);
+}
 
     void drawTrianglePixel(
     int x, int y, uint32_t color,
@@ -163,10 +168,11 @@ vec3_t barycentricWeights(vec2_t a, vec2_t b, vec2_t c, vec2_t p) {
 
 //Function to draw textured pixel at x and y position
 void drawTexel(
-    int x, int y, uint32_t* texture,
+    int x, int y, upng_t* texture,
     vec4_t pointA, vec4_t pointB, vec4_t pointC,
-    tex2_t aUv,  tex2_t bUv, tex2_t cUv
-    ) {
+    tex2_t aUv,  tex2_t bUv, tex2_t cUv,
+    float i0, float i1, float i2
+    )   {
         vec2_t p = {x,y};
         vec2_t a = vec4ToVec2(pointA);
         vec2_t b = vec4ToVec2(pointB);
@@ -196,21 +202,35 @@ void drawTexel(
         interpolatedU /= interpolatedReciprocalW;
         interpolatedV /= interpolatedReciprocalW;
 
-        //Map the UV coordinate to the full texture width and height
-        int texX = abs((int)(interpolatedU * textureWidth)) % textureWidth; //Clamping
-        int texY = abs((int)((1.0 - interpolatedV) * textureHeight)) % textureHeight;
+        float iOverW = (i0/pointA.w)*alpha + (i1/pointB.w)*beta + (i2/pointC.w)*gamma;
+        float I = clampf(iOverW/interpolatedReciprocalW,0.0f,1.0f);
+
+
+
 
         //Adjust 1/w so the pixels that are closer to the camera have smaller values.
-        interpolatedReciprocalW = 1.0 - interpolatedReciprocalW;
+        float depth = 1.0 - interpolatedReciprocalW;
 
 
         //Only draw the pixel if the depth value is the less than the one previously stored in the z buffer
-        if (interpolatedReciprocalW < getZBufferAt(x,y)) {
-            drawPixel(x,y,texture[(textureWidth * texY) + texX]);
+        if (depth < getZBufferAt(x,y)) {
 
-            //Update the z buffer value with 1/w of current pixel
-            updateZBufferAt(x,y,interpolatedReciprocalW);
+            unsigned int textureWidth = upng_get_width(texture);
+            unsigned int textureHeight = upng_get_height(texture);
+
+            //Map the UV coordinate to the full texture width and height
+            int texX = abs((int)(interpolatedU * textureWidth)) % textureWidth; //Clamping
+            int texY = abs((int)((1.0 - interpolatedV) * textureHeight)) % textureHeight;
+
+            //Get the buffer of colors from the texture
+            uint32_t* textureBuffer = (uint32_t*)upng_get_buffer(texture);
+            uint32_t texel = textureBuffer[texY*textureWidth + texX];
+            uint32_t lit = lightApplyIntensity(texel, I);
+            drawPixel(x, y, lit);
+            updateZBufferAt(x, y, depth);
+
         }
+
 
 
 
@@ -219,10 +239,11 @@ void drawTexel(
 
 
 void drawTexturedTriangle (
-    int x0, int y0, float z0, float w0, float u0, float v0,
-    int x1, int y1, float z1, float w1, float u1, float v1,
-    int x2, int y2, float z2, float w2, float u2, float v2,
-    uint32_t* texture
+    int x0,int y0,float z0,float w0,float u0,float v0,
+    int x1,int y1,float z1,float w1,float u1,float v1,
+    int x2,int y2,float z2,float w2,float u2,float v2,
+    upng_t* texture,
+    float i0, float i1, float i2
     ) {
     //Sort it by ascending order (y0 < y1 <y2)
     if (y0 > y1) {
@@ -232,6 +253,7 @@ void drawTexturedTriangle (
         floatSwap(&w0,&w1);
         floatSwap(&u0,&u1);
         floatSwap(&v0,&v1);
+        floatSwap(&i0,&i1);
     }
     if (y1 > y2) {
         intSwap(&y1,&y2);
@@ -240,6 +262,7 @@ void drawTexturedTriangle (
         floatSwap(&w1,&w2);
         floatSwap(&u1,&u2);
         floatSwap(&v1,&v2);
+        floatSwap(&i1,&i2);
     }
     if (y0 > y1) {
         intSwap(&y0,&y1);
@@ -248,6 +271,7 @@ void drawTexturedTriangle (
         floatSwap(&w0,&w1);
         floatSwap(&u0,&u1);
         floatSwap(&v0,&v1);
+        floatSwap(&i0,&i1);
     }
     //Create vector points and texture coords after we sort the vertices
     vec4_t pointA = {x0,y0,z0,w0};
@@ -283,7 +307,7 @@ void drawTexturedTriangle (
             for (int x = xStart; x<xEnd;x++) {
 
                 //drawPixel(x,y,0xFFFF00FF);
-                drawTexel(x,y,texture,pointA,pointB,pointC,aUv,bUv,cUv);
+                drawTexel(x,y,texture,pointA,pointB,pointC,aUv,bUv,cUv,i0,i1,i2);
 
             }
         }
@@ -314,14 +338,35 @@ void drawTexturedTriangle (
             for (int x = xStart; x<xEnd;x++) {
 
                 //drawPixel(x,y,0xFFFF00FF);
-                drawTexel(x,y,texture,pointA,pointB,pointC,aUv,bUv,cUv);
+                drawTexel(x,y,texture,pointA,pointB,pointC,aUv,bUv,cUv,i0,i1,i2);
             }
         }
     }
 
 
-
-
-
-
 }
+
+vec3_t getTriangleNormal(vec4_t vertices[3]) {
+        //Dont forget this is in CLOCKWISE ORDER
+        vec3_t vectorA = vec4ToVec3(vertices[0]);
+        vec3_t vectorB = vec4ToVec3(vertices[1]);
+        vec3_t vectorC = vec4ToVec3(vertices[2]);
+
+        //Find the vector between points
+        vec3_t vectorAB = vec3Subtract(vectorB, vectorA);
+        vec3_t vectorAC = vec3Subtract(vectorC, vectorA);
+        vec3Normalize(&vectorAB);
+        vec3Normalize(&vectorAC);
+
+        //Compute the face normal using the cross product
+        vec3_t normal = vec3Cross(vectorAB, vectorAC);
+
+        //Normalize the face normal
+        vec3Normalize(&normal);
+        return normal;
+
+    }
+
+
+
+
