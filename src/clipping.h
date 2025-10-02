@@ -26,10 +26,11 @@ typedef struct {
     tex2_t texCoords[MAX_NUM_POLY_VERTICES];
     int numVertices;
     float intensities[MAX_NUM_POLY_VERTICES];
+    vec2_t   worldXZ[MAX_NUM_POLY_VERTICES];
 }polygon_t;
 
 void initFrustumPlanes(float fovX, float fovY, float zNear, float zFar);
-polygon_t createPolygonFromTriangle(vec3_t v0, vec3_t v1, vec3_t v2,tex2_t t0, tex2_t t1, tex2_t t2, float iA, float iB, float iC);
+polygon_t createPolygonFromTriangle(vec3_t v0, vec3_t v1, vec3_t v2,tex2_t t0, tex2_t t1, tex2_t t2, float iA, float iB, float iC,vec2_t wx0,vec2_t wx1, vec2_t wx2);
 void trianglesFromPolygon(polygon_t* polygon, triangle_t triangles[], int* numTriangles);
 void clipPolygonAgainstPlane(polygon_t *polygon,int plane);
 void clipPolygon(polygon_t* polygon);

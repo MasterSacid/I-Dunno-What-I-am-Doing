@@ -14,6 +14,7 @@ static int windowHeight = 200;
 
 static int renderMode = 0;
 static int cullMode = 0;
+static int effectMode = 0;
 
 
 //Getters and Setters
@@ -31,6 +32,14 @@ void setRenderMode(int mode) {
 void setCullMode(int mode) {
     cullMode = mode;
 }
+
+void setEffectMode(int mode) {
+    effectMode = mode;
+}
+int getEffect(void) {
+    return effectMode;
+}
+
 
 float getZBufferAt(int x, int y) {
     if (x<0 || x> windowWidth || y < 0 || y> windowHeight)
@@ -78,8 +87,8 @@ bool initializeWindow(void) {
     int fullscreenWidth = displayMode.w;
     int fullscreenHeight = displayMode.h;
 
-    windowWidth = fullscreenWidth / 3;
-    windowHeight = fullscreenHeight / 3;
+    windowWidth = fullscreenWidth / 2;
+    windowHeight = fullscreenHeight / 2;
 
 
     //Create a window

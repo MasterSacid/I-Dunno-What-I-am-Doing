@@ -23,6 +23,8 @@ vec2_t vec2Multiply(vec2_t v, float factor);
 vec2_t vec2Divide(vec2_t v, float factor);
 float vec2DotProduct(vec2_t a, vec2_t b);
 void vec2Normalize (vec2_t* v);
+vec2_t vec2Clone(vec2_t* v);
+
 
 
 

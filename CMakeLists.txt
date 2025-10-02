@@ -8,7 +8,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)
 
 
-pkg_check_modules(SDL2_MIXER REQUIRED SDL2_mixer)
+
 
 add_executable(renderingInC
         src/main.c
@@ -24,21 +24,23 @@ add_executable(renderingInC
         src/upng.c src/upng.h
         src/camera.c src/camera.h
         src/clipping.c src/clipping.h
+        src/water.c
+        src/water.h
 )
 
 target_include_directories(renderingInC PRIVATE
         ${SDL2_INCLUDE_DIRS}
-        ${SDL2_MIXER_INCLUDE_DIRS}
+
 )
 
 target_link_directories(renderingInC PRIVATE
         ${SDL2_LIBRARY_DIRS}
-        ${SDL2_MIXER_LIBRARY_DIRS}
+
 )
 
 target_link_libraries(renderingInC PRIVATE
         ${SDL2_LIBRARIES}
-        ${SDL2_MIXER_LIBRARIES}
+
 )
 
 

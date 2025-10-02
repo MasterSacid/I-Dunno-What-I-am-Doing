@@ -9,6 +9,9 @@ static inline float clampf(float x, float lo, float hi) {
     return x < lo ? lo : (x > hi ? hi : x);
 }
 
+
+
+
     void drawTrianglePixel(
     int x, int y, uint32_t color,
     vec4_t pointA, vec4_t pointB, vec4_t pointC
@@ -151,6 +154,8 @@ vec3_t barycentricWeights(vec2_t a, vec2_t b, vec2_t c, vec2_t p) {
     // Area of the full parallelogram (triangle ABC) using cross product
     float areaParallelogramAbc = (ac.x * ab.y - ac.y * ab.x); // || AC x AB ||
 
+        if (fabsf(areaParallelogramAbc) < 1e-6f) return (vec3_t){0,0,0}; // or early-skip the tri
+
     // Alpha = area of parallelogram-PBC over the area of the full parallelogram-ABC
     float alpha = (pc.x * pb.y - pc.y * pb.x) / areaParallelogramAbc;
 
@@ -171,7 +176,8 @@ void drawTexel(
     int x, int y, upng_t* texture,
     vec4_t pointA, vec4_t pointB, vec4_t pointC,
     tex2_t aUv,  tex2_t bUv, tex2_t cUv,
-    float i0, float i1, float i2
+    float i0, float i1, float i2,
+    vec2_t aWZ, vec2_t bWZ, vec2_t cWZ,int effect
     )   {
         vec2_t p = {x,y};
         vec2_t a = vec4ToVec2(pointA);
@@ -188,6 +194,8 @@ void drawTexel(
         //Variables to store the interpolated values of U, V and 1/W for texel
         float interpolatedU;
         float interpolatedV;
+        float interpolatedWorldX;
+        float interpolatedWorldZ;
         float interpolatedReciprocalW;
 
 
@@ -201,6 +209,35 @@ void drawTexel(
         //We divide back both interpolations by 1/w
         interpolatedU /= interpolatedReciprocalW;
         interpolatedV /= interpolatedReciprocalW;
+
+
+        interpolatedWorldX = (aWZ.x / pointA.w) * alpha + (bWZ.x / pointB.w) * beta + (cWZ.x / pointC.w) * gamma;
+        interpolatedWorldZ = (aWZ.y / pointA.w) * alpha + (bWZ.y / pointB.w) * beta + (cWZ.y / pointC.w) * gamma;
+
+        float Xw_px = interpolatedWorldX / interpolatedReciprocalW;
+        float Zw_px = interpolatedWorldZ / interpolatedReciprocalW;
+
+        float scale = 1.1f;
+        float Xs = Xw_px * scale;
+        float Zs = Zw_px * scale;
+
+        float du = 0.0f, dv = 0.0f;
+
+        if (WATER_EFFECT == effect) {
+            water_compute_uv_warp(&gWater, Xs, Zs, gTimeSeconds, &du, &dv);
+
+            float uWarp = interpolatedU + du;
+            float vWarp = interpolatedV + dv;
+
+            // wrap to [0,1)
+            uWarp = water_wrap01(uWarp);
+            vWarp = water_wrap01(vWarp);
+
+            interpolatedU = uWarp;
+            interpolatedV = vWarp;
+        }
+
+
 
         float iOverW = (i0/pointA.w)*alpha + (i1/pointB.w)*beta + (i2/pointC.w)*gamma;
         float I = clampf(iOverW/interpolatedReciprocalW,0.0f,1.0f);
@@ -243,7 +280,8 @@ void drawTexturedTriangle (
     int x1,int y1,float z1,float w1,float u1,float v1,
     int x2,int y2,float z2,float w2,float u2,float v2,
     upng_t* texture,
-    float i0, float i1, float i2
+    float i0, float i1, float i2,
+    vec2_t aWZ, vec2_t bWZ, vec2_t cWZ, int effect
     ) {
     //Sort it by ascending order (y0 < y1 <y2)
     if (y0 > y1) {
@@ -254,6 +292,7 @@ void drawTexturedTriangle (
         floatSwap(&u0,&u1);
         floatSwap(&v0,&v1);
         floatSwap(&i0,&i1);
+        vec2Swap(&aWZ,&bWZ);
     }
     if (y1 > y2) {
         intSwap(&y1,&y2);
@@ -263,6 +302,7 @@ void drawTexturedTriangle (
         floatSwap(&u1,&u2);
         floatSwap(&v1,&v2);
         floatSwap(&i1,&i2);
+        vec2Swap(&bWZ,&cWZ);
     }
     if (y0 > y1) {
         intSwap(&y0,&y1);
@@ -272,6 +312,7 @@ void drawTexturedTriangle (
         floatSwap(&u0,&u1);
         floatSwap(&v0,&v1);
         floatSwap(&i0,&i1);
+        vec2Swap(&aWZ,&bWZ);
     }
     //Create vector points and texture coords after we sort the vertices
     vec4_t pointA = {x0,y0,z0,w0};
@@ -280,6 +321,10 @@ void drawTexturedTriangle (
     tex2_t aUv = {u0,v0};
     tex2_t bUv = {u1,v1};
     tex2_t cUv = {u2,v2};
+
+        float area2 = (float)(x1 - x0) * (float)(y2 - y0) - (float)(y1 - y0) * (float)(x2 - x0);
+        if (fabsf(area2) < 0.5f) return;
+
 
 
 
@@ -306,8 +351,8 @@ void drawTexturedTriangle (
 
             for (int x = xStart; x<xEnd;x++) {
 
-                //drawPixel(x,y,0xFFFF00FF);
-                drawTexel(x,y,texture,pointA,pointB,pointC,aUv,bUv,cUv,i0,i1,i2);
+
+                drawTexel(x,y,texture,pointA,pointB,pointC,aUv,bUv,cUv,i0,i1,i2,aWZ,bWZ,cWZ,effect);
 
             }
         }
@@ -338,7 +383,7 @@ void drawTexturedTriangle (
             for (int x = xStart; x<xEnd;x++) {
 
                 //drawPixel(x,y,0xFFFF00FF);
-                drawTexel(x,y,texture,pointA,pointB,pointC,aUv,bUv,cUv,i0,i1,i2);
+                drawTexel(x,y,texture,pointA,pointB,pointC,aUv,bUv,cUv,i0,i1,i2,aWZ,bWZ,cWZ,effect);
             }
         }
     }

@@ -7,13 +7,14 @@ static mesh_t meshes[MAX_NUM_MESHES];
 static int meshCount = 0;
 
 
-void loadMesh(char* objFilePath, char* pngFilePath, vec3_t scale, vec3_t translation, vec3_t rotation) {
+void loadMesh(char* objFilePath, char* pngFilePath, vec3_t scale, vec3_t translation, vec3_t rotation, int effectMode) {
     loadMeshObjData(&meshes[meshCount],objFilePath);
     loadMeshPngData(&meshes[meshCount],pngFilePath);
 
     meshes[meshCount].scale = scale;
     meshes[meshCount].translation = translation;
     meshes[meshCount].rotation = rotation;
+    meshes[meshCount].effectMode = effectMode;
 
     meshCount++;
 }

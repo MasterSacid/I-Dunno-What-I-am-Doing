@@ -48,6 +48,13 @@ void vec2Normalize (vec2_t* v) {
     v -> y /= length;
 }
 
+vec2_t vec2Clone(vec2_t* v) {
+    vec2_t result = {v->x,v->y};
+    return result;
+}
+
+
+
 
 
 
