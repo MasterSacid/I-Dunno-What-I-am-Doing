@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <SDL2/SDL.h>
+#include "../external/SDL/include/SDL.h"
 
 
 #define FPS 120
