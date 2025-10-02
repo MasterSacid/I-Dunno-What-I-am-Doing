@@ -64,7 +64,7 @@ This project is built with **CMake (3.21+)**. SDL2 is vendored as a **Git submod
 1. Clone the repository (including submodules):
 
    ```bash
-   git clone --recursive <repository-url>
+   git clone --recursive https://github.com/MasterSacid/C-renderer
    cd 3drenderer
    ```
 
@@ -115,7 +115,7 @@ This project is built with **CMake (3.21+)**. SDL2 is vendored as a **Git submod
 3. Clone the repository (with submodules):
 
    ```bash
-   git clone --recursive <repository-url>
+   git clone --recursive https://github.com/MasterSacid/C-renderer
    cd 3drenderer
    ```
 

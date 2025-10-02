@@ -104,10 +104,6 @@ void setup(void) {
     //loadMesh("assets/cube.obj", "assets/MamaHong.png", vec3New(1, 1, 1), vec3New(0, 0, -5),vec3New(0, 0, 0),NONE);
 
 
-
-
-
-
     water_init_default(&gWater);
     gWater.shimmer_u_scale = 0.005f;
     gWater.shimmer_v_scale = 0.005f;
