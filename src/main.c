@@ -260,14 +260,6 @@ void update(void) {
         m3->rotation.y += 1.0 * deltaTime;
         */
 
-
-        //mesh.rotation.y += 1.0 * deltaTime;
-        //mesh.rotation.z += 0.01 * deltaTime;
-        //mesh.scale.x += 0.002;
-        //mesh.scale.y += 0.001;
-        //mesh.translation.x += 1.0 * deltaTime;
-        //mesh.translation.z = 6.00;
-
         processGraphicsPipelineStages(allOffTheMeshes);
 
     }
