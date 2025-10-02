@@ -39,12 +39,13 @@ void initFrustumPlanes(float fovX, float fovY, float zNear, float zFar) {
     frustumPlanes[FAR_FRUSTUM_PLANE].normal.z = -1;
 }
 
-polygon_t createPolygonFromTriangle(vec3_t v0, vec3_t v1, vec3_t v2,tex2_t t0, tex2_t t1, tex2_t t2, float iA, float iB, float iC){
+polygon_t createPolygonFromTriangle(vec3_t v0, vec3_t v1, vec3_t v2,tex2_t t0, tex2_t t1, tex2_t t2, float iA, float iB, float iC, vec2_t wx0,vec2_t wx1, vec2_t wx2){
     polygon_t polygon = {
         .vertices = {v0,v1,v2},
         .texCoords = {t0,t1,t2},
         .numVertices = 3,
-        .intensities = {iA,iB,iC}
+        .intensities = {iA,iB,iC} ,
+        .worldXZ = {wx0,wx1,wx2}
     };
     return polygon;
 }
@@ -67,6 +68,10 @@ void trianglesFromPolygon(polygon_t* polygon, triangle_t triangles[], int* numTr
         triangles[i].intensities[0] = polygon->intensities[index0];
         triangles[i].intensities[1] = polygon->intensities[index1];
         triangles[i].intensities[2] = polygon->intensities[index2];
+
+        triangles[i].worldXZ[0] = polygon ->worldXZ[index0];
+        triangles[i].worldXZ[1] = polygon ->worldXZ[index1];
+        triangles[i].worldXZ[2] = polygon ->worldXZ[index2];
     }
     *numTriangles = polygon ->numVertices - 2;
 }
@@ -83,6 +88,7 @@ void clipPolygonAgainstPlane(polygon_t* polygon,int plane) {
     vec3_t insideVertices[MAX_NUM_POLY_VERTICES];
     tex2_t insideTexCoords[MAX_NUM_POLY_VERTICES];
     float insideIntensities[MAX_NUM_POLY_VERTICES];
+    vec2_t insideWorldXZ[MAX_NUM_POLY_VERTICES];
 
     int numInsideVertices = 0;
 
@@ -94,6 +100,9 @@ void clipPolygonAgainstPlane(polygon_t* polygon,int plane) {
 
     float* currentIntensity = &polygon -> intensities [0];
     float* previousIntensity = &polygon -> intensities [polygon -> numVertices -1];
+
+    vec2_t* currentWorldXZ = &polygon -> worldXZ[0];
+    vec2_t* previousWorldXZ = &polygon -> worldXZ[polygon -> numVertices - 1];
 
     float currentDot = 0;
     float prevDot = vec3DotProduct(vec3Subtract(*previousVertex,planePoint),planeNormal);
@@ -125,6 +134,13 @@ void clipPolygonAgainstPlane(polygon_t* polygon,int plane) {
             //For Intensities
             float interpolatedIntensity = floatLerp(*previousIntensity,*currentIntensity,t);
 
+            //For world XZ (Water rendering)
+            vec2_t interpolatedWorldXZ = {
+                .x = floatLerp(previousWorldXZ->x, currentWorldXZ->x, t),
+                .y = floatLerp(previousWorldXZ->y, currentWorldXZ->y, t)
+            };
+
+            insideWorldXZ[numInsideVertices] =  vec2Clone(&interpolatedWorldXZ);
             insideVertices[numInsideVertices] = vec3Clone(&intersectionPoint);
             insideTexCoords[numInsideVertices] = tex2Clone(&interpolatedTexCoord);
             insideIntensities[numInsideVertices] = interpolatedIntensity;
@@ -151,6 +167,9 @@ void clipPolygonAgainstPlane(polygon_t* polygon,int plane) {
         previousIntensity = currentIntensity;
         currentIntensity++;
 
+        previousWorldXZ = currentWorldXZ;
+        currentWorldXZ++;
+
     }
 
     //copy the list of in vertices to the polygon
@@ -158,6 +177,7 @@ void clipPolygonAgainstPlane(polygon_t* polygon,int plane) {
         polygon -> vertices[i] = vec3Clone(&insideVertices[i]);
         polygon -> texCoords[i] = tex2Clone(&insideTexCoords[i]);
         polygon->intensities[i]  = insideIntensities[i];
+        polygon ->worldXZ[i] = vec2Clone(&insideWorldXZ[i]);
     }
     polygon -> numVertices = numInsideVertices;
 }

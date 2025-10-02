@@ -8,6 +8,7 @@
 #include "vector.h"
 #include "triangle.h"
 #include "upng.h"
+#include "display.h"
 
 
 
@@ -24,10 +25,11 @@ typedef struct {
     vec3_t rotation;
     vec3_t scale;
     vec3_t translation;
+    int effectMode;
 } mesh_t;
 
 
-void loadMesh(char* objFilePath, char* pngFilePath, vec3_t scale, vec3_t translation, vec3_t rotation);
+void loadMesh(char* objFilePath, char* pngFilePath, vec3_t scale, vec3_t translation, vec3_t rotation, int effectMode);
 void loadMeshObjData (mesh_t* mesh, char* objFileName);
 void loadMeshPngData(mesh_t* mesh, char* pngFileName);
 

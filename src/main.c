@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_mixer.h>
+
 #include "upng.h"
 #include "display.h"
 #include "vector.h"
@@ -14,6 +14,7 @@
 #include "light.h"
 #include "camera.h"
 #include "clipping.h"
+#include "water.h"
 
 
 void setup(void);
@@ -28,19 +29,24 @@ void render(void);
 void freeResources(void);
 void processGraphicsPipelineStages(mesh_t* mesh);
 
+
+
+
 #define MAX_TRIANGLES_PER_MESH 10000
 
 
 bool isRunning = false;
 uint32_t previousFrameTime = 0;
 float deltaTime = 0;
-Mix_Music *bgm;
 
 
 
 mat4_t projMatrix;
 mat4_t viewMatrix;
 mat4_t worldMatrix;
+
+WaterParams gWater;
+float gTimeSeconds;
 
 
 triangle_t trianglesToRender[MAX_TRIANGLES_PER_MESH];
@@ -52,10 +58,7 @@ light_t light = {.position = {0, 0, 5}};
 
 int main(void) {
     isRunning = initializeWindow();
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        return -1;
-    }
+
 
     setup();
 
@@ -88,25 +91,26 @@ void setup(void) {
 
     initFrustumPlanes(fovX, fovY, zNear, zFar);
 
-    vec3_t sunRaysDir = {0.0f, 1.0f, 3.0f};
+    vec3_t sunRaysDir = {0.0f, 3.0f, 0.0f};
     vec3Normalize(&sunRaysDir);
-    light.direction = vec3Multiply(sunRaysDir, -1.0f);
+    light.direction = vec3Multiply(sunRaysDir, 1.0f);
 
 
     //Load the OBJ FIle
-    loadMesh("../assets/Car 01/Car.obj", "../assets/Car 01/car.png", vec3New(1, 1, 1), vec3New(-3, 0, 8),vec3New(0, 0, 0));
-    loadMesh("../assets/Car 01/Car.obj", "../assets/Car 01/car_red.png", vec3New(1, 1, 1), vec3New(3, 0, 8),vec3New(0, 0, 0));
-    loadMesh("../assets/Car 01/Car.obj", "../assets/Car 01/car_blue.png", vec3New(1, 1, 1), vec3New(0, 3, 8),vec3New(0, 0, 0));
-    //loadMesh("../assets/cube.obj", "../assets/upscaled.png", vec3New(1, 1, 1), vec3New(3, 0, 8), vec3New(0, 0, 0));
+    loadMesh("assets/Car 01/Car.obj", "assets/Car 01/car.png", vec3New(1, 1, 1), vec3New(-4, 0, 8),vec3New(M_PI/3.0, M_PI/3.0, 0),NONE);
+    loadMesh("assets/Car 01/Car.obj", "assets/Car 01/car_red.png", vec3New(1, 1, 1), vec3New(4, 0, 8),vec3New(M_PI/2.0, 0, 0),NONE);
+    loadMesh("assets/Car 01/Car.obj", "assets/Car 01/car_blue.png", vec3New(1, 1, 1), vec3New(0, 0, 8),vec3New(0, 0, 0),NONE);
+    loadMesh("assets/surface.obj", "assets/pool2.png", vec3New(1, 1, 1), vec3New(0, 0, 0), vec3New(0, 0, 0),WATER_EFFECT);
+    //loadMesh("assets/cube.obj", "assets/MamaHong.png", vec3New(1, 1, 1), vec3New(0, 0, -5),vec3New(0, 0, 0),NONE);
 
 
-    bgm = Mix_LoadMUS("../assets/funkytown.mp3");
-    if (!bgm) {
-        printf("Failed to load background music: %s\n", Mix_GetError());
-    } else {
-        Mix_PlayMusic(bgm, -1);
-    }
 
+
+
+
+    water_init_default(&gWater);
+    gWater.shimmer_u_scale = 0.005f;
+    gWater.shimmer_v_scale = 0.005f;
 
 
     // --- Camera init ---
@@ -231,6 +235,10 @@ void update(void) {
     deltaTime = (SDL_GetTicks() - previousFrameTime) / 1000.0;
     previousFrameTime = SDL_GetTicks();
 
+    gTimeSeconds += deltaTime;
+
+
+
     //Initialize the counter of triangles for the current frame
     numTrianglesToRender = 0;
 
@@ -238,27 +246,19 @@ void update(void) {
     //Loop all the meshes
     for (int meshIndex = 0; meshIndex < getNumOfMeshes(); meshIndex++) {
         mesh_t* allOffTheMeshes = getMesh(meshIndex);
-        mesh_t* m1 = getMesh(0);
-        mesh_t* m2 = getMesh(1);
-        mesh_t* m3 = getMesh(2);
+        //mesh_t* m1 = getMesh(0);
+        //mesh_t* m2 = getMesh(1);
+        //mesh_t* m3 = getMesh(2);
 
 
 
         //Change the mesh scale, rotation, translation....  every frame
 
-
+        /*
         m1->rotation.y += 1.0 * deltaTime;
         m2->rotation.y += 1.0 * deltaTime;
         m3->rotation.y += 1.0 * deltaTime;
-
-
-
-        //mesh.rotation.y += 1.0 * deltaTime;
-        //mesh.rotation.z += 0.01 * deltaTime;
-        //mesh.scale.x += 0.002;
-        //mesh.scale.y += 0.001;
-        //mesh.translation.x += 1.0 * deltaTime;
-        //mesh.translation.z = 6.00;
+        */
 
         processGraphicsPipelineStages(allOffTheMeshes);
 
@@ -294,7 +294,8 @@ void render(void) {
                 triangle.points[2].x, triangle.points[2].y, triangle.points[2].z, triangle.points[2].w,
                 triangle.texCoords[2].u, triangle.texCoords[2].v, //Vertex C
                 triangle.texture,
-                triangle.intensities[0], triangle.intensities[1], triangle.intensities[2]
+                triangle.intensities[0], triangle.intensities[1], triangle.intensities[2],
+                triangle.worldXZ[0],triangle.worldXZ[1],triangle.worldXZ[2],triangle.effect
 
              );
         }
@@ -343,7 +344,6 @@ void processGraphicsPipelineStages(mesh_t* mesh) {
         worldMatrix = mat4MultipMat4(rotationMatrixX, worldMatrix);
         worldMatrix = mat4MultipMat4(translationMatrix, worldMatrix);
 
-        // === Per-vertex smoothed normals (object space -> world space) and intensities ===
         int numVerts = array_length(mesh->vertices);
         int numFaces = array_length(mesh -> faces);
 
@@ -375,7 +375,7 @@ void processGraphicsPipelineStages(mesh_t* mesh) {
             vec3Normalize(&worldNormals[v]);
         }
 
-        float ambient = 0.2f;
+        float ambient = 0.05f;
         vec3_t L = light.direction;
         float* vertI = (float*)malloc(numVerts * sizeof(float));
         for (int v = 0; v < numVerts; v++) {
@@ -399,25 +399,33 @@ void processGraphicsPipelineStages(mesh_t* mesh) {
             vec4_t viewVertices[3];
             vec4_t transformedVertices[3];
 
+            vec2_t worldXZ[3];
+
             //loop all three vertices of the face and aplly rotations
             for (int j = 0; j < 3; j++) {
                 vec4_t v = vec3ToVec4(faceVertices[j]);   // w=1
 
-                // Use the prebuilt worldMatrix (don’t rebuild here)
+                // Use the prebuilt worldMatrix
                 vec4_t vWorld = mat4MultipVec4(worldMatrix, v);
                 worldVertices[j] = vWorld;
+
+                //For water rendering only
+                worldXZ[j] = (vec2_t){vWorld.x, vWorld.z};
+                vec2Normalize(&worldXZ[j]);
 
                 // Then view transform once
                 vec4_t vView  = mat4MultipVec4(viewMatrix, vWorld);
                 viewVertices[j] = vView;
 
-                // Your clipper works in VIEW space, so store that
+                //clipper works in view space
                 transformedVertices[j] = vView;
             }
 
+
+
             //Calculate the triangle face normal
 
-            vec3_t nView = getTriangleNormal(viewVertices); // For culling
+            vec3_t nView = getTriangleNormal(viewVertices); // For culling (view space)
 
 
             //-------------- Make the backface culling ---------
@@ -437,6 +445,8 @@ void processGraphicsPipelineStages(mesh_t* mesh) {
             float iB = vertI[meshFace.b];
             float iC = vertI[meshFace.c];
 
+
+
             //Create a polygon from the original transform
             polygon_t polygon = createPolygonFromTriangle(
                 vec4ToVec3(transformedVertices[0]),
@@ -445,7 +455,8 @@ void processGraphicsPipelineStages(mesh_t* mesh) {
                 meshFace.aUv,
                 meshFace.bUv,
                 meshFace.cUv,
-                iA,iB,iC
+                iA,iB,iC,
+                worldXZ[0],worldXZ[1],worldXZ[2]
             );
             //Clip the polygon
             clipPolygon(&polygon);
@@ -487,7 +498,7 @@ void processGraphicsPipelineStages(mesh_t* mesh) {
                 //Light and Shading
                 float triIntensityAvg = (Itri[0] + Itri[1] + Itri[2]) / 3.0f;
                 uint32_t shadedColor = lightApplyIntensity(meshFace.color, triIntensityAvg);
-
+                //Push it
                 triangle_t triangleToRender = {
                     .points = {
                         {projectedPoints[0].x, projectedPoints[0].y, projectedPoints[0].z, projectedPoints[0].w},
@@ -502,7 +513,13 @@ void processGraphicsPipelineStages(mesh_t* mesh) {
                     .color = shadedColor,
                     .texture = mesh ->texture,
                     .intensity = triIntensityAvg,
-                    .intensities = { Itri[0], Itri[1], Itri[2] }
+                    .intensities = { Itri[0], Itri[1], Itri[2] },
+                    .worldXZ = {
+                        {triangleAfterClipping.worldXZ[0].x,triangleAfterClipping.worldXZ[0].y},
+                        {triangleAfterClipping.worldXZ[1].x,triangleAfterClipping.worldXZ[1].y},
+                        {triangleAfterClipping.worldXZ[2].x,triangleAfterClipping.worldXZ[2].y},
+                    },
+                    .effect = mesh ->effectMode
                 };
 
                 if (numTrianglesToRender < MAX_TRIANGLES_PER_MESH) {
@@ -519,7 +536,5 @@ void freeResources(void) {
     freeMeshes();
     destroyWindow();
     SDL_SetRelativeMouseMode(SDL_FALSE);
-    Mix_HaltMusic();
-    Mix_FreeMusic(bgm);
-    Mix_CloseAudio();
+
 }

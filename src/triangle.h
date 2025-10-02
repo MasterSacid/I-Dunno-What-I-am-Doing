@@ -2,7 +2,7 @@
 #define TRIANGLE_H
 
 #include <stdint.h>
-
+#include "water.h"
 #include "texture.h"
 #include "vector.h"
 #include "upng.h"
@@ -24,7 +24,14 @@ typedef struct {
     upng_t* texture;
     float intensity;
     float intensities[3];
+    vec2_t   worldXZ[3];
+    int effect;
 } triangle_t;
+
+
+
+extern WaterParams gWater;
+extern float gTimeSeconds;
 
 void drawFilledTriangle(int x0, int y0, float z0, float w0, int x1, int y1, float z1, float w1, int x2, int y2, float z2, float w2, uint32_t color);
 
@@ -33,7 +40,8 @@ void drawTexel(
     int x,int y, upng_t* texture,
     vec4_t pA, vec4_t pB, vec4_t pC,
     tex2_t uvA, tex2_t uvB, tex2_t uvC,
-    float i0, float i1, float i2
+    float i0, float i1, float i2,
+    vec2_t aWZ, vec2_t bWZ, vec2_t cWZ,int effect
 );
 
 void drawTrianglePixel(
@@ -46,7 +54,8 @@ void drawTexturedTriangle(
     int x1,int y1,float z1,float w1,float u1,float v1,
     int x2,int y2,float z2,float w2,float u2,float v2,
     upng_t* texture,
-    float i0, float i1, float i2
+    float i0, float i1, float i2,
+    vec2_t aWZ,vec2_t bWZ, vec2_t cWZ,int effect
 );
 
 vec3_t barycentricWeights(vec2_t a, vec2_t b, vec2_t c, vec2_t p);

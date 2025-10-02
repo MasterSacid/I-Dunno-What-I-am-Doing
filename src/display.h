@@ -23,12 +23,24 @@ enum renderMode {
     RENDER_TEXTURED_WIRE
 };
 
+enum effect {
+    WATER_EFFECT,
+    NONE
+};
+
+
+
+
+
+
 
 
 int getWindowWidth(void);
 int getWindowHeight(void);
 void setRenderMode(int mode);
 void setCullMode(int mode);
+
+
 float getZBufferAt(int x, int y);
 void updateZBufferAt(int x, int y, float value);
 
