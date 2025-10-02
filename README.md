@@ -8,22 +8,23 @@ Project name in CMake: `renderingInC`.
 
 ## Features ✨
 
-- C11, single executable, cross‑platform via SDL2.
-- Wavefront OBJ mesh loading with per-mesh PNG textures (via a minimal PNG decoder `upng`).
-- CPU rasterizer with Z-buffering and frustum clipping.
-- Perspective/camera system with free-fly FPS controls and mouselook.
-- Directional light with ambient term; per-vertex intensities.
-- Gouraud shading for smooth lighting across surfaces.
-- Multiple render modes you can toggle at runtime:
-  - Wireframe only
-  - Wireframe + vertices
-  - Solid filled triangles
-  - Solid + wireframe overlay
-  - Textured
-  - Textured + wireframe overlay
-- Backface culling toggle.
-- Water surface effect (simple shimmer) available per-mesh.
-- Fullscreen by default on macOS; internal color/z buffer sized to half the display resolution for performance.
+* C11, single executable, cross-platform via SDL2.
+* Wavefront OBJ mesh loading with per-mesh PNG textures (via a minimal PNG decoder `upng`).
+* CPU rasterizer with Z-buffering and frustum clipping.
+* Perspective/camera system with free-fly FPS controls and mouselook.
+* Directional light with ambient term; per-vertex intensities.
+* Gouraud shading for smooth lighting across surfaces.
+* Multiple render modes you can toggle at runtime:
+
+  * Wireframe only
+  * Wireframe + vertices
+  * Solid filled triangles
+  * Solid + wireframe overlay
+  * Textured
+  * Textured + wireframe overlay
+* Backface culling toggle.
+* Water surface effect (simple shimmer) available per-mesh.
+* Fullscreen by default on macOS; internal color/z buffer sized to half the display resolution for performance.
 
 ---
 
@@ -31,77 +32,138 @@ Project name in CMake: `renderingInC`.
 
 From `src/main.c` and `src/display.[ch]`:
 
-- Movement: W/A/S/D (planar), Space (up), Left/Right Ctrl (down)
-- Mouse: Look around (relative mouse mode)
-- Render mode:
-  - 1: Wireframe + vertices
-  - 2: Wireframe
-  - 3: Filled
-  - 4: Filled + wireframe
-  - 5: Textured
-  - 6: Textured + wireframe
-- Culling:
-  - C: Backface culling ON
-  - X: Culling OFF
-- ESC: Quit
+* Movement: W/A/S/D (planar), Space (up), Left/Right Ctrl (down)
+* Mouse: Look around (relative mouse mode)
+* Render mode:
+
+  * 1: Wireframe + vertices
+  * 2: Wireframe
+  * 3: Filled
+  * 4: Filled + wireframe
+  * 5: Textured
+  * 6: Textured + wireframe
+* Culling:
+
+  * C: Backface culling ON
+  * X: Culling OFF
+* ESC: Quit
 
 Notes:
-- Relative mouse mode is enabled on startup (mouse is captured and hidden). Press ESC to exit the app; Cmd+Tab to switch focus on macOS.
-- Default render mode is Textured with backface culling.
+
+* Relative mouse mode is enabled on startup (mouse is captured and hidden). Press ESC to exit the app; Cmd+Tab to switch focus on macOS.
+* Default render mode is Textured with backface culling.
 
 ---
 
 ## Build and Run 🛠️
 
-The project is built with CMake (3.21+). SDL2 will be automatically fetched and built during the setup process, so no prior installation is required.
+This project is built with **CMake (3.21+)**. SDL2 is vendored as a **Git submodule** under `external/SDL`, so you don’t need to install SDL2 manually — it will be built along with the project.
 
-### Setup Instructions
+### Setup Instructions (Linux/macOS)
 
-1. Clone the repository:
+1. Clone the repository (including submodules):
+
    ```bash
-   git clone <repository-url>
+   git clone --recursive <repository-url>
    cd 3drenderer
    ```
-2. Create a build directory and navigate into it:
+
+   If you already cloned without `--recursive`, run:
+
+   ```bash
+   git submodule update --init --recursive
+   ```
+
+2. Create a build directory:
+
    ```bash
    mkdir build && cd build
    ```
-3. Configure the project (auto-fetch SDL2):
+
+3. Configure the project:
+
    ```bash
-   cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_SYSTEM_SDL2=OFF ..
+   cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
    ```
+
 4. Build the project:
+
    ```bash
    cmake --build . -j
    ```
+
 5. Run the application:
+
    ```bash
    ./renderingInC
    ```
 
 ---
 
+### Setup Instructions (Windows with MinGW/MSYS2)
+
+
+
+1. Install [MSYS2](https://www.msys2.org/).
+
+2. Open the **MSYS2 MinGW64 terminal** and install the toolchain:
+
+   ```bash
+   pacman -S --needed base-devel git cmake ninja mingw-w64-x86_64-toolchain
+   ```
+
+3. Clone the repository (with submodules):
+
+   ```bash
+   git clone --recursive <repository-url>
+   cd 3drenderer
+   ```
+
+4. Configure with CMake:
+
+   ```bash
+   cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+   ```
+
+5. Build:
+
+   ```bash
+   cmake --build build
+   ```
+
+6. Run the program:
+
+   ```bash
+   ./build/renderingInC.exe
+   ```
+
+
+---
+
 ## Assets 📂
 
-This repository includes sample OBJ/MTL and PNG textures under `assets/`.
+This repository includes sample OBJ and PNG textures under the `assets/` directory.
 
-Default meshes loaded at startup (see `setup()` in `src/main.c`):
+“At build time, CMake copies the `assets/` folder next to the executable. You can place your own OBJ/PNG files there and load them, but keep meshes under ~10,000 triangles. When exporting from Blender, make sure to enable the *Triangulated Mesh* option.”
 
-- Three instances of `assets/Car 01/Car.obj` with different textures (`car.png`, `car_red.png`, `car_blue.png`)
-- A surface mesh `assets/surface.obj` with `assets/pool2.png` using the water effect
-- You can swap in other meshes like `assets/cube.obj` (example line already present but commented out)
 
-### OBJ Loading Structure 📦
 
-The application uses the `loadMesh()` function (defined in `src/mesh.c`) to load OBJ files and their associated PNG textures. Each mesh is initialized with:
-- Scale, translation, and rotation vectors.
-- A texture file path for applying textures.
-- An optional effect mode (e.g., water shimmer).
+### Default Meshes
 
-Example from `setup()` in `src/main.c`:
+By default, `setup()` in `src/main.c` loads:
+
+* Three instances of `assets/Car 01/Car.obj` with different textures (`car.png`, `car_red.png`, `car_blue.png`).
+* A surface mesh `assets/surface.obj` with `assets/pool2.png`, using the water effect.
+* (Optional) A cube mesh from `assets/cube.obj` (already present, commented out in the code).
+
+### Example
+
 ```c
-loadMesh("../assets/Car 01/Car.obj", "../assets/Car 01/car.png", 
-         vec3New(1, 1, 1), vec3New(-4, 0, 8), vec3New(M_PI/3.0, M_PI/3.0, 0), NONE);
+loadMesh("assets/Car 01/Car.obj", "assets/Car 01/car.png",
+         vec3New(1, 1, 1),
+         vec3New(-4, 0, 8),
+         vec3New(M_PI/3.0, M_PI/3.0, 0),
+         NONE);
 ```
 
 ---
@@ -109,11 +171,13 @@ loadMesh("../assets/Car 01/Car.obj", "../assets/Car 01/car.png",
 ## Lighting and Shading 💡
 
 The renderer uses a simple directional light model with ambient lighting. The light direction (`sunRaysDir`) is defined in `setup()` as:
+
 ```c
 vec3_t sunRaysDir = {0.0f, 3.0f, 0.0f};
 vec3Normalize(&sunRaysDir);
 light.direction = vec3Multiply(sunRaysDir, 1.0f);
 ```
+
 You can tweak the `sunRaysDir` vector to adjust the light's direction and intensity.
 
 Gouraud shading is used to interpolate lighting across vertices, providing smooth shading for surfaces.
@@ -122,17 +186,20 @@ Gouraud shading is used to interpolate lighting across vertices, providing smoot
 
 ## Configuration and Tweaks ⚙️
 
-- Initial render/cull modes are set in `setup()` (`src/main.c`).
-- Target FPS is 120 (`display.h`: `FPS`, `FRAME_TARGET_TIME`).
-- Fullscreen is enabled by default
-- **Resolution Adjustment**: In `display.c`, the `windowWidth` and `windowHeight` are set to half the fullscreen resolution by default:
+* Initial render/cull modes are set in `setup()` (`src/main.c`).
+* Target FPS is 120 (`display.h`: `FPS`, `FRAME_TARGET_TIME`).
+* Fullscreen is enabled by default
+* **Resolution Adjustment**: In `display.c`, the `windowWidth` and `windowHeight` are set to half the fullscreen resolution by default:
+
   ```c
   windowWidth = fullscreenWidth / 2;
   windowHeight = fullscreenHeight / 2;
   ```
+
   You can modify the divisor (e.g., replace `2` with another value) to adjust the resolution to your needs:
-  - Setting the divisor closer to `1` (e.g., `1`) will increase the resolution, making the visuals sharper.
-  - Using larger values (e.g., `3`, `4`, etc.) will create a more pixelated, nostalgic look.
+
+  * Setting the divisor closer to `1` (e.g., `1`) will increase the resolution, making the visuals sharper.
+  * Using larger values (e.g., `3`, `4`, etc.) will create a more pixelated, nostalgic look.
 
 ---
 
@@ -155,12 +222,13 @@ Gouraud shading is used to interpolate lighting across vertices, providing smoot
 │   ├── upng.[ch]           # Tiny PNG loader
 │   ├── vector.[ch]         # Vector math primitives
 │   └── water.[ch]          # Water/shimmer effect parameters and helpers
-├── assets/                 # Sample OBJ/MTL/PNG assets
+├── assets/                 # Sample OBJ/PNG assets (copied next to binary at build time)
 │   ├── Car 01/             # Car model and textures
 │   ├── cube.obj            # Cube model
 │   ├── surface.obj         # Surface model
 │   └── pool2.png           # Texture for the surface
-├── CMakeLists.txt          # Build configuration (SDL2 via system or FetchContent)
+├── external/SDL/           # SDL2 submodule (vendored library)
+├── CMakeLists.txt          # Build configuration
 └── README.md               # Project documentation
 ```
 
@@ -168,27 +236,30 @@ Gouraud shading is used to interpolate lighting across vertices, providing smoot
 
 ## Screenshots 📸
 
-Place your screenshots in a `docs/` folder (or any path you prefer) and update the links below.
 
-- Main scene
-  
-  ![Main scene](docs/screenshot-1.png)
+* Main scene
 
-- Wireframe mode
-  
-  ![Wireframe mode](docs/screenshot-2.png)
+  ![Main scene](docs/mainscene.png)
 
-- Water effect close-up
-  
-  ![Water effect](docs/screenshot-3.png)
+* Wireframe mode
+
+  ![Wireframe mode](docs/wireframe.png)
+
+* Water effect 
+
+  ![Water effect](docs/water.png)
+* Shading
+![Shading](docs/shading.png)
 
 ---
 
 ## Resources and Acknowledgments 🙏
 
 ### Resources
-- **Water Animation**: The water animation effect in this project was inspired by techniques described in the book *GPU Gems*.
-- **Gouraud Shading**: I referred to [this StackExchange post](https://computergraphics.stackexchange.com/questions/10845/how-exactly-does-gouraud-shading-apply-color-across-a-polygon-does-it-do-it-by) to understand how Gouraud shading applies color across a polygon.
+
+* **Water Animation**: The water animation effect in this project was inspired by techniques described in the book *GPU Gems*.
+* **Gouraud Shading**: I referred to [this StackExchange post](https://computergraphics.stackexchange.com/questions/10845/how-exactly-does-gouraud-shading-apply-color-across-a-polygon-does-it-do-it-by) to understand how Gouraud shading applies color across a polygon.
 
 ### Acknowledgments
-- I followed Gustavo Prezzi's lectures for core rendering.
+
+* I followed Gustavo Prezzi's lectures for core rendering maths and rendering pipeline.

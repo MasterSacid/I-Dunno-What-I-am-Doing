@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "../external/SDL/include/SDL.h"
+#include <SDL2/SDL.h>
 
 #include "upng.h"
 #include "display.h"
@@ -97,11 +97,11 @@ void setup(void) {
 
 
     //Load the OBJ FIle
-    loadMesh("../assets/Car 01/Car.obj", "../assets/Car 01/car.png", vec3New(1, 1, 1), vec3New(-4, 0, 8),vec3New(M_PI/3.0, M_PI/3.0, 0),NONE);
-    loadMesh("../assets/Car 01/Car.obj", "../assets/Car 01/car_red.png", vec3New(1, 1, 1), vec3New(4, 0, 8),vec3New(M_PI/2.0, 0, 0),NONE);
-    loadMesh("../assets/Car 01/Car.obj", "../assets/Car 01/car_blue.png", vec3New(1, 1, 1), vec3New(0, 0, 8),vec3New(0, 0, 0),NONE);
-    loadMesh("../assets/surface.obj", "../assets/pool2.png", vec3New(1, 1, 1), vec3New(0, 0, 0), vec3New(0, 0, 0),WATER_EFFECT);
-    //loadMesh("../assets/cube.obj", "../assets/MamaHong.png", vec3New(1, 1, 1), vec3New(0, 0, -5),vec3New(0, 0, 0),NONE);
+    loadMesh("assets/Car 01/Car.obj", "assets/Car 01/car.png", vec3New(1, 1, 1), vec3New(-4, 0, 8),vec3New(M_PI/3.0, M_PI/3.0, 0),NONE);
+    loadMesh("assets/Car 01/Car.obj", "assets/Car 01/car_red.png", vec3New(1, 1, 1), vec3New(4, 0, 8),vec3New(M_PI/2.0, 0, 0),NONE);
+    loadMesh("assets/Car 01/Car.obj", "assets/Car 01/car_blue.png", vec3New(1, 1, 1), vec3New(0, 0, 8),vec3New(0, 0, 0),NONE);
+    loadMesh("assets/surface.obj", "assets/pool2.png", vec3New(1, 1, 1), vec3New(0, 0, 0), vec3New(0, 0, 0),WATER_EFFECT);
+    //loadMesh("assets/cube.obj", "assets/MamaHong.png", vec3New(1, 1, 1), vec3New(0, 0, -5),vec3New(0, 0, 0),NONE);
 
 
 
